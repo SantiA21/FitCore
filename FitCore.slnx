@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FitCore.Api/FitCore.Api.csproj" />
+    <Project Path="src/FitCore.Application/FitCore.Application.csproj" />
+    <Project Path="src/FitCore.Domain/FitCore.Domain.csproj" />
+    <Project Path="src/FitCore.Infrastructure/FitCore.Infrastructure.csproj" />
+  </Folder>
+</Solution>
