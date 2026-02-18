@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,11 +14,7 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
 
-interface NuevoClienteProps {
-  onNavigateToClientes: () => void;
-}
-
-export default function NuevoCliente({ onNavigateToClientes }: NuevoClienteProps) {
+export default function NuevoCliente() {
   const [form, setForm] = useState({
     nombre: "",
     telefono: "",
@@ -25,6 +22,7 @@ export default function NuevoCliente({ onNavigateToClientes }: NuevoClienteProps
   });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -49,7 +47,7 @@ export default function NuevoCliente({ onNavigateToClientes }: NuevoClienteProps
         });
         setForm({ nombre: "", telefono: "", email: "" });
         setTimeout(() => {
-          onNavigateToClientes();
+          navigate("/clientes");
         }, 1500);
       } else {
         toast({
@@ -70,8 +68,8 @@ export default function NuevoCliente({ onNavigateToClientes }: NuevoClienteProps
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <Card className="w-full max-w-md">
+    <div className="max-w-2xl">
+      <Card>
         <CardHeader>
           <CardTitle>Nuevo Cliente</CardTitle>
           <CardDescription>
@@ -122,7 +120,7 @@ export default function NuevoCliente({ onNavigateToClientes }: NuevoClienteProps
             <Button
               type="button"
               variant="outline"
-              onClick={onNavigateToClientes}
+              onClick={() => navigate("/clientes")}
               disabled={loading}
             >
               Cancelar
