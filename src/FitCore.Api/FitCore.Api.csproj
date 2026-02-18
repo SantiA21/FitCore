@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -19,6 +19,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FitCore.Infrastructure\FitCore.Infrastructure.csproj" />
+    <ProjectReference Include="..\FitCore.Domain\FitCore.Domain.csproj" />
+    <ProjectReference Include="..\FitCore.Application\FitCore.Application.csproj" />
   </ItemGroup>
 
 </Project>
