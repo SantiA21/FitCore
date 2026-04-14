@@ -10,5 +10,7 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
+
     public DbSet<Cliente> Clientes => Set<Cliente>();
+    public DbSet<Plan> Planes { get; set; }
 }
