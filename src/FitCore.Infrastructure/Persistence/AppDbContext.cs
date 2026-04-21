@@ -4,8 +4,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace FitCore.Infrastructure.Persistence;
-
-public class AppDbContext : IdentityDbContext<IdentityUser>
+public class AppDbContext : IdentityDbContext<AppUser>
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
@@ -13,4 +12,6 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
 
     public DbSet<Cliente> Clientes => Set<Cliente>();
     public DbSet<Plan> Planes { get; set; }
+    public DbSet<Membresia> Membresias { get; set; }
+    public DbSet<Pago> Pagos => Set<Pago>();
 }

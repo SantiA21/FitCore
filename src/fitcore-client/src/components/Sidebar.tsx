@@ -1,6 +1,7 @@
-import { LayoutDashboard, Users, CreditCard, Calendar, User } from "lucide-react";
+import { LayoutDashboard, Users, CreditCard, Calendar, User, LogOut } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
 
 interface NavItem {
   label: string;
@@ -18,6 +19,12 @@ const navItems: NavItem[] = [
 export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
   return (
     <aside className="w-[220px] bg-white border-r border-[#f0f0f0] flex flex-col h-screen fixed left-0 top-0">
@@ -31,7 +38,7 @@ export default function Sidebar() {
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;
-          
+
           return (
             <button
               key={item.path}
@@ -50,16 +57,27 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Profile Section */}
-      <div className="p-4 border-t border-[#f0f0f0]">
+      {/* Profile + Logout */}
+      <div className="p-4 border-t border-[#f0f0f0] space-y-1">
         <div className="flex items-center gap-3 px-3 py-2">
-          <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+          <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center shrink-0">
             <User className="h-4 w-4 text-gray-600" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-black truncate">Usuario</p>
+            <p className="text-sm font-medium text-black truncate">
+              {user ? `${user.nombre} ${user.apellido}` : "Usuario"}
+            </p>
+            <p className="text-xs text-[#888] truncate">{user?.roles[0] ?? ""}</p>
           </div>
         </div>
+
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-[#888] hover:bg-[#f9f9f9] hover:text-black transition-colors"
+        >
+          <LogOut className="h-4 w-4" />
+          <span>Cerrar sesión</span>
+        </button>
       </div>
     </aside>
   );
