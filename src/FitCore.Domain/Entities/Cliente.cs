@@ -11,8 +11,11 @@ namespace FitCore.Domain.Entities
         public string Telefono { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public DateTime FechaAlta { get; set; } = DateTime.UtcNow;
-        public int PlanId { get; set; }
-        public Plan Plan { get; set; }
+        public int? PlanId { get; set; }
+        public Plan? Plan { get; set; }
         public bool Activo { get; set; } = true;
+
+        public ICollection<Membresia> Membresias { get; set; } = new List<Membresia>();
     }
+
 }

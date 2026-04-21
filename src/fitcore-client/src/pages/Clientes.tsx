@@ -30,6 +30,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+import { apiFetch } from "@/lib/api";
+
 type Cliente = {
   id: number;
   nombre: string;
@@ -84,7 +86,7 @@ export default function Clientes() {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetch("http://localhost:5192/api/clientes")
+    apiFetch("/api/clientes")
       .then((res) => res.json())
       .then((data) => setClientes(data))
       .finally(() => setLoading(false));

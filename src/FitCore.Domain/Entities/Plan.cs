@@ -7,4 +7,6 @@
     public bool Activo { get; set; } = true;
 
     public Guid GymId { get; set; } // clave para SaaS
+
+    public ICollection<Membresia> Membresias { get; set; } = new List<Membresia>();
 }
