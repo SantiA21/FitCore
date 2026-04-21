@@ -1,4 +1,4 @@
-﻿using FitCore.Domain.Entities;
+using FitCore.Domain.Entities;
 using FitCore.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -35,6 +35,14 @@ public class ClientesController : ControllerBase
         return Ok(cliente);
     }
 
+    // GET api/clientes/activos/count
+    [HttpGet("activos/count")]
+    public async Task<IActionResult> GetActivosCount()
+    {
+        var count = await _context.Clientes.CountAsync(c => c.Activo);
+        return Ok(new { total = count });
+    }
+
     // POST api/clientes
     [HttpPost]
     public async Task<IActionResult> Create(Cliente cliente)
@@ -61,6 +69,17 @@ public class ClientesController : ControllerBase
         var cliente = await _context.Clientes.FindAsync(id);
         if (cliente is null) return NotFound();
         cliente.Activo = false;
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
+    // DELETE api/clientes/5/permanente
+    [HttpDelete("{id}/permanente")]
+    public async Task<IActionResult> HardDelete(int id)
+    {
+        var cliente = await _context.Clientes.FindAsync(id);
+        if (cliente is null) return NotFound();
+        _context.Clientes.Remove(cliente);
         await _context.SaveChangesAsync();
         return NoContent();
     }

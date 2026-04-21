@@ -9,6 +9,7 @@ import NuevoCliente from "./pages/NuevoCliente";
 import Pagos from "./pages/Pagos";
 import Asistencias from "./pages/Asistencias";
 import { Toaster } from "./components/ui/toaster";
+import Register from "./pages/Register";
 
 function App() {
   return (
@@ -17,7 +18,7 @@ function App() {
         <Routes>
           {/* Ruta pública */}
           <Route path="/login" element={<Login />} />
-
+          <Route path="/register" element={<Register />} />
           {/* Rutas protegidas — envueltas en Layout */}
           <Route
             path="/*"

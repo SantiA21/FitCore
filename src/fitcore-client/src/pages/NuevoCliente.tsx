@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
+import { apiFetch } from "@/lib/api";
 
 export default function NuevoCliente() {
   const [form, setForm] = useState({
@@ -33,9 +34,8 @@ export default function NuevoCliente() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:5192/api/clientes", {
+      const response = await apiFetch("/api/clientes", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
 
@@ -56,7 +56,7 @@ export default function NuevoCliente() {
           description: "Hubo un problema al crear el cliente. Por favor, intenta nuevamente.",
         });
       }
-    } catch (error) {
+    } catch {
       toast({
         variant: "destructive",
         title: "Error al crear cliente",

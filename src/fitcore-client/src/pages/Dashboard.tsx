@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { apiFetch } from "@/lib/api";
 
 type Cliente = {
   id: number;
@@ -24,37 +25,37 @@ type Cliente = {
 
 export default function Dashboard() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [clientesActivos, setClientesActivos] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetch("http://localhost:5192/api/clientes")
-      .then((res) => res.json())
-      .then((data) => {
-        setClientes(data);
-      })
-      .finally(() => setLoading(false));
-  }, []);
-
   // Métricas mockeadas
-  const clientesActivos = clientes.filter((c) => c.activo).length;
-  const cuotasVencidas = 12; // Mock
-  const ingresosMes = "$45,230"; // Mock
-  const asistenciasHoy = 28; // Mock
+  const cuotasVencidas = 12;
+  const ingresosMes = "$45,230";
+  const asistenciasHoy = 28;
 
   // Últimos 5 clientes
   const ultimosClientes = clientes.slice(0, 5);
 
+  useEffect(() => {
+    Promise.all([
+      apiFetch("/api/clientes")
+        .then((res) => res.json())
+        .then((data) => setClientes(data)),
+      apiFetch("/api/clientes/activos/count")
+        .then((res) => res.json())
+        .then((data) => setClientesActivos(data.total)),
+    ]).finally(() => setLoading(false));
+  }, []);
+
   if (loading) {
     return (
       <div className="space-y-8">
-        {/* Skeleton métricas */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[1, 2, 3, 4].map((i) => (
             <MetricCardSkeleton key={i} />
           ))}
         </div>
 
-        {/* Skeleton tabla */}
         <div className="bg-white rounded-lg border border-gray-200">
           <div className="p-6 border-b border-gray-200">
             <Skeleton className="h-6 w-40" />
@@ -88,10 +89,9 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      {/* Métricas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
-          value={clientesActivos}
+          value={clientesActivos ?? 0}
           label="Clientes activos"
           icon={Users}
         />
@@ -112,7 +112,6 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Tabla de últimos clientes */}
       <div className="bg-white rounded-lg border border-gray-200">
         <div className="p-6 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-black">Últimos clientes</h2>
