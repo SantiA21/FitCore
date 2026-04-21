@@ -16,6 +16,7 @@ namespace FitCore.Domain.Entities
         public bool Activo { get; set; } = true;
 
         public ICollection<Membresia> Membresias { get; set; } = new List<Membresia>();
+        public ICollection<Asistencia> Asistencias { get; set; } = [];
     }
 
 }

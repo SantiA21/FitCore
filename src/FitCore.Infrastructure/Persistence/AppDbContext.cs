@@ -14,4 +14,5 @@ public class AppDbContext : IdentityDbContext<AppUser>
     public DbSet<Plan> Planes { get; set; }
     public DbSet<Membresia> Membresias { get; set; }
     public DbSet<Pago> Pagos => Set<Pago>();
+    public DbSet<Asistencia> Asistencias { get; set; }
 }
