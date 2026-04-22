@@ -1,0 +1,210 @@
+import { useState, useEffect, useCallback } from "react";
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
+import { apiFetch } from "@/lib/api";
+import { useToast } from "@/components/ui/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
+import BentoCard from "./BentoCard";
+import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+const DIAS_SEMANA = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+const MESES = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+];
+
+function toDateOnly(date: Date): string {
+  // Use local date to avoid timezone issues when converting to YYYY-MM-DD
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getDiasDelMes(anio: number, mes: number): (Date | null)[] {
+  const primerDia = new Date(anio, mes, 1).getDay();
+  const diasEnMes = new Date(anio, mes + 1, 0).getDate();
+  const celdas: (Date | null)[] = Array(primerDia).fill(null);
+  for (let d = 1; d <= diasEnMes; d++) {
+    celdas.push(new Date(anio, mes, d));
+  }
+  return celdas;
+}
+
+interface CalendarBentoCardProps {
+  className?: string;
+  delay?: number;
+  onSelectDate?: (date: Date) => void;
+  selectedDate?: Date | null;
+}
+
+type ResumenDia = {
+  fecha: string;
+  total: number;
+  asistentes: string[];
+};
+
+export default function CalendarBentoCard({ className, delay, onSelectDate, selectedDate }: CalendarBentoCardProps) {
+  const hoy = new Date();
+  const [anio, setAnio] = useState(hoy.getFullYear());
+  const [mes, setMes] = useState(hoy.getMonth());
+  const [resumen, setResumen] = useState<ResumenDia[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  const cargarResumen = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await apiFetch(`/api/asistencias/resumen?mes=${mes + 1}&anio=${anio}`);
+      const data = await res.json();
+      setResumen(data);
+    } catch {
+      toast({ variant: "destructive", title: "Error al cargar el resumen" });
+    } finally {
+      setLoading(false);
+    }
+  }, [mes, anio, toast]);
+
+  useEffect(() => {
+    cargarResumen();
+  }, [cargarResumen]);
+
+  const irMesAnterior = () => {
+    if (mes === 0) { setMes(11); setAnio((a) => a - 1); }
+    else setMes((m) => m - 1);
+  };
+
+  const irMesSiguiente = () => {
+    if (mes === 11) { setMes(0); setAnio((a) => a + 1); }
+    else setMes((m) => m + 1);
+  };
+
+  const celdas = getDiasDelMes(anio, mes);
+  const resumenMap = new Map(resumen.map((r) => [r.fecha.slice(0, 10), r]));
+  const hoyStr = toDateOnly(hoy);
+  const seleccionadoStr = selectedDate ? toDateOnly(selectedDate) : null;
+
+  const getHeatmapClass = (total: number, selected: boolean, esHoy: boolean) => {
+    if (selected) return "bg-indigo-600 text-white shadow-lg shadow-indigo-200";
+    if (esHoy) return "bg-indigo-50 text-indigo-700 font-bold";
+    if (total === 0) return "text-gray-300 hover:bg-gray-50";
+    if (total <= 5) return "bg-emerald-100 text-emerald-700 font-medium hover:bg-emerald-200";
+    if (total <= 15) return "bg-emerald-300 text-emerald-900 font-bold hover:bg-emerald-400";
+    return "bg-emerald-500 text-white font-black hover:bg-emerald-600";
+  };
+
+  return (
+    <BentoCard className={cn("flex flex-col h-full !p-4", className)} delay={delay}>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <CalendarIcon className="h-4 w-4 text-primary" />
+          <h3 className="text-sm font-bold text-black">{MESES[mes]} {anio}</h3>
+        </div>
+        <div className="flex items-center gap-1">
+          <button onClick={irMesAnterior} className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
+            <ChevronLeft className="h-3 w-3 text-gray-600" />
+          </button>
+          <button onClick={irMesSiguiente} className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
+            <ChevronRight className="h-3 w-3 text-gray-600" />
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-7 mb-2">
+        {DIAS_SEMANA.map((d) => (
+          <div key={d} className="text-center text-[9px] font-bold text-gray-300 uppercase tracking-widest">
+            {d}
+          </div>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="grid grid-cols-7 gap-1 flex-1">
+          {Array.from({ length: 35 }).map((_, i) => (
+            <Skeleton key={i} className="aspect-square w-full rounded-xl bg-gray-50" />
+          ))}
+        </div>
+      ) : (
+        <TooltipProvider delayDuration={100}>
+          <div className="grid grid-cols-7 gap-1 flex-1">
+            {celdas.map((dia, i) => {
+              if (!dia) return <div key={`empty-${i}`} />;
+              const fechaStr = toDateOnly(dia);
+              const diaData = resumenMap.get(fechaStr);
+              const total = diaData?.total ?? 0;
+              const asistentes = diaData?.asistentes ?? [];
+              const esHoy = fechaStr === hoyStr;
+              const esSeleccionado = fechaStr === seleccionadoStr;
+
+              return (
+                <Tooltip key={fechaStr}>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => onSelectDate?.(dia)}
+                      className={cn(
+                        "relative flex flex-col items-center justify-center aspect-square w-full rounded-xl text-[11px] transition-all duration-200 cursor-pointer",
+                        getHeatmapClass(total, esSeleccionado, esHoy),
+                        esHoy && !esSeleccionado && "ring-2 ring-indigo-400 ring-offset-1"
+                      )}
+                    >
+                      <span className="leading-none">{dia.getDate()}</span>
+                      {total > 0 && (
+                        <span className={cn(
+                          "text-[7px] mt-0.5 font-black",
+                          esSeleccionado || total > 15 ? "text-white/80" : "text-gray-400"
+                        )}>
+                          {total}
+                        </span>
+                      )}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="top"
+                    className="rounded-2xl border-none shadow-2xl p-4 bg-white/95 backdrop-blur-xl text-black animate-in fade-in zoom-in-95"
+                  >
+                    <div className="space-y-3 min-w-[160px]">
+                      <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-primary">Asistencias del Día</p>
+                        <div className="bg-primary/10 px-2 py-0.5 rounded-full">
+                          <span className="text-[11px] font-black text-primary">{total}</span>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 gap-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+                        {asistentes && asistentes.length > 0 ? asistentes.map((nombre, idx) => (
+                          <div key={idx} className="flex items-center gap-2 group/item">
+                            <div className="h-5 w-5 rounded-lg bg-gray-100 flex items-center justify-center text-[8px] font-bold text-gray-500 group-hover/item:bg-primary/20 group-hover/item:text-primary transition-colors">
+                              {nombre.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                            </div>
+                            <span className="text-[11px] font-bold text-gray-700 group-hover/item:text-black transition-colors">{nombre}</span>
+                          </div>
+                        )) : (
+                          <div className="py-4 text-center">
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Sin registros hoy</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </div>
+        </TooltipProvider>
+      )}
+
+      <div className="mt-3 pt-3 border-t border-gray-50 flex items-center justify-between">
+        <span className="text-[8px] text-gray-300 font-bold uppercase tracking-widest">Actividad</span>
+        <div className="flex gap-0.5">
+          <div className="h-1.5 w-1.5 rounded-full bg-accent/10" />
+          <div className="h-1.5 w-1.5 rounded-full bg-accent/30" />
+          <div className="h-1.5 w-1.5 rounded-full bg-accent" />
+        </div>
+      </div>
+    </BentoCard>
+  );
+}
