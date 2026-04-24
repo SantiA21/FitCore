@@ -1,9 +1,9 @@
-﻿namespace FitCore.Application.DTOs;
+namespace FitCore.Application.DTOs;
 
 public class CrearPagoRequest
 {
-    public int ClienteId { get; set; }
+    public string UserId { get; set; } = string.Empty;
     public int? MembresiaId { get; set; }
-    public decimal? Monto { get; set; } // Este campo es opcional. Te sugiere un precio y permite override
-    public string Metodo { get; set; }
+    public decimal? Monto { get; set; } // Opcional: si no se pasa se toma el precio del plan
+    public string Metodo { get; set; } = string.Empty;
 }

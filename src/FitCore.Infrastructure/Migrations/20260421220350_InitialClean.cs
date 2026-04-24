@@ -31,6 +31,10 @@ namespace FitCore.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "text", nullable: false),
+                    Nombre = table.Column<string>(type: "text", nullable: false),
+                    Apellido = table.Column<string>(type: "text", nullable: false),
+                    FechaAlta = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Activo = table.Column<bool>(type: "boolean", nullable: false),
                     UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -198,6 +202,27 @@ namespace FitCore.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Asistencias",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ClienteId = table.Column<int>(type: "integer", nullable: false),
+                    Fecha = table.Column<DateOnly>(type: "date", nullable: false),
+                    HoraIngreso = table.Column<TimeOnly>(type: "time without time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Asistencias", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Asistencias_Clientes_ClienteId",
+                        column: x => x.ClienteId,
+                        principalTable: "Clientes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Membresias",
                 columns: table => new
                 {
@@ -225,6 +250,39 @@ namespace FitCore.Infrastructure.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.CreateTable(
+                name: "Pagos",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ClienteId = table.Column<int>(type: "integer", nullable: false),
+                    MembresiaId = table.Column<int>(type: "integer", nullable: true),
+                    Monto = table.Column<decimal>(type: "numeric", nullable: false),
+                    Fecha = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Metodo = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Pagos", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Pagos_Clientes_ClienteId",
+                        column: x => x.ClienteId,
+                        principalTable: "Clientes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Pagos_Membresias_MembresiaId",
+                        column: x => x.MembresiaId,
+                        principalTable: "Membresias",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Asistencias_ClienteId",
+                table: "Asistencias",
+                column: "ClienteId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
@@ -277,11 +335,24 @@ namespace FitCore.Infrastructure.Migrations
                 name: "IX_Membresias_PlanId",
                 table: "Membresias",
                 column: "PlanId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Pagos_ClienteId",
+                table: "Pagos",
+                column: "ClienteId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Pagos_MembresiaId",
+                table: "Pagos",
+                column: "MembresiaId");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "Asistencias");
+
             migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
 
@@ -298,13 +369,16 @@ namespace FitCore.Infrastructure.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
-                name: "Membresias");
+                name: "Pagos");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");
+
+            migrationBuilder.DropTable(
+                name: "Membresias");
 
             migrationBuilder.DropTable(
                 name: "Clientes");

@@ -36,7 +36,7 @@ export default function NuevoCliente() {
     try {
       const response = await apiFetch("/api/clientes", {
         method: "POST",
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, categoria: 2 }),
       });
 
       if (response.ok) {

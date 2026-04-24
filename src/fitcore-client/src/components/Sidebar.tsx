@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, CreditCard, Calendar, User, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, CreditCard, Calendar, User, LogOut, ClipboardList } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
@@ -9,17 +9,24 @@ interface NavItem {
   path: string;
 }
 
-const navItems: NavItem[] = [
-  { label: "Dashboard", icon: LayoutDashboard, path: "/" },
-  { label: "Clientes", icon: Users, path: "/clientes" },
-  { label: "Pagos", icon: CreditCard, path: "/pagos" },
-  { label: "Asistencias", icon: Calendar, path: "/asistencias" },
+const adminNavItems: NavItem[] = [
+  { label: "Dashboard",   icon: LayoutDashboard, path: "/dashboard-admin" },
+  { label: "Clientes",    icon: Users,            path: "/clientes" },
+  { label: "Planes",      icon: ClipboardList,    path: "/planes-admin" },
+  { label: "Pagos",       icon: CreditCard,       path: "/pagos" },
+  { label: "Asistencias", icon: Calendar,         path: "/asistencias" },
+];
+
+const clienteNavItems: NavItem[] = [
+  { label: "Planes", icon: ClipboardList, path: "/dashboard-cliente" },
 ];
 
 export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
+
+  const navItems = isAdmin ? adminNavItems : clienteNavItems;
 
   const handleLogout = () => {
     logout();
@@ -67,7 +74,7 @@ export default function Sidebar() {
             <p className="text-sm font-medium text-black truncate">
               {user ? `${user.nombre} ${user.apellido}` : "Usuario"}
             </p>
-            <p className="text-xs text-[#888] truncate">{user?.roles[0] ?? ""}</p>
+            <p className="text-xs text-[#888] truncate">{user?.categoria ?? ""}</p>
           </div>
         </div>
 

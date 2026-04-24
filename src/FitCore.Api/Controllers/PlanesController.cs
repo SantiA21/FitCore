@@ -1,7 +1,12 @@
-﻿using FitCore.Infrastructure.Persistence;
+using FitCore.Domain.Entities;
+using FitCore.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+namespace FitCore.Api.Controllers;
+
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class PlanesController : ControllerBase
@@ -55,7 +60,6 @@ public class PlanesController : ControllerBase
     {
         var plan = await _context.Planes.FindAsync(id);
         if (plan is null) return NotFound();
-
         plan.Activo = false;
         await _context.SaveChangesAsync();
         return NoContent();

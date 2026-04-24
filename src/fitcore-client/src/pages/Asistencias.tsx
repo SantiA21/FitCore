@@ -27,7 +27,7 @@ import { apiFetch } from "@/lib/api";
 
 type Asistencia = {
   id: number;
-  clienteId: number;
+  userId: string;
   clienteNombre: string;
   fecha: string;
   horaIngreso: string;
@@ -39,7 +39,7 @@ type ResumenDia = {
 };
 
 type Cliente = {
-  id: number;
+  id: string;
   nombre: string;
   activo: boolean;
 };
@@ -163,7 +163,7 @@ export default function Asistencias() {
       const res = await apiFetch("/api/asistencias", {
         method: "POST",
         body: JSON.stringify({
-          clienteId: Number(formClienteId),
+          userId: formClienteId,
           fecha: toDateOnly(diaSeleccionado),
           horaIngreso: `${formHora}:00`,
         }),
@@ -406,7 +406,7 @@ export default function Asistencias() {
                 </SelectTrigger>
                 <SelectContent position="popper" className="max-h-60 overflow-y-auto">
                   {clientes.map((c) => (
-                    <SelectItem key={c.id} value={String(c.id)}>
+                    <SelectItem key={c.id} value={c.id}>
                       {c.nombre}
                     </SelectItem>
                   ))}

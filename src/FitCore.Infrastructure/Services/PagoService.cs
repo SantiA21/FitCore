@@ -1,6 +1,7 @@
-﻿using FitCore.Application.DTOs;
+using FitCore.Application.DTOs;
 using FitCore.Domain.Entities;
 using FitCore.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace FitCore.Infrastructure.Services;
@@ -8,18 +9,20 @@ namespace FitCore.Infrastructure.Services;
 public class PagoService
 {
     private readonly AppDbContext _context;
+    private readonly UserManager<AppUser> _userManager;
 
-    public PagoService(AppDbContext context)
+    public PagoService(AppDbContext context, UserManager<AppUser> userManager)
     {
         _context = context;
+        _userManager = userManager;
     }
 
     public async Task<PagoResponse> Crear(CrearPagoRequest request)
     {
-        var cliente = await _context.Clientes.FindAsync(request.ClienteId);
+        var user = await _userManager.FindByIdAsync(request.UserId);
 
-        if (cliente == null)
-            throw new Exception("Cliente no encontrado");
+        if (user == null)
+            throw new Exception("Usuario no encontrado");
 
         decimal montoFinal;
 
@@ -44,7 +47,7 @@ public class PagoService
 
         var pago = new Pago
         {
-            ClienteId = request.ClienteId,
+            UserId = request.UserId,
             MembresiaId = request.MembresiaId,
             Monto = montoFinal,
             Metodo = request.Metodo,
@@ -57,7 +60,7 @@ public class PagoService
         return new PagoResponse
         {
             Id = pago.Id,
-            ClienteNombre = cliente.Nombre,
+            ClienteNombre = user.Nombre,
             Monto = pago.Monto,
             Metodo = pago.Metodo,
             Fecha = pago.Fecha
@@ -67,11 +70,11 @@ public class PagoService
     public async Task<List<PagoResponse>> GetAll()
     {
         return await _context.Pagos
-            .Include(p => p.Cliente)
+            .Include(p => p.User)
             .Select(p => new PagoResponse
             {
                 Id = p.Id,
-                ClienteNombre = p.Cliente.Nombre,
+                ClienteNombre = p.User.Nombre,
                 Monto = p.Monto,
                 Metodo = p.Metodo,
                 Fecha = p.Fecha

@@ -23,16 +23,16 @@ public class AsistenciasController : ControllerBase
     public async Task<IActionResult> GetByFecha([FromQuery] DateOnly fecha)
     {
         var asistencias = await _context.Asistencias
-            .Include(a => a.Cliente)
+            .Include(a => a.User)
             .Where(a => a.Fecha == fecha)
             .OrderBy(a => a.HoraIngreso)
             .Select(a => new
             {
                 a.Id,
-                a.ClienteId,
+                a.UserId,
                 a.Fecha,
                 a.HoraIngreso,
-                clienteNombre = a.Cliente.Nombre,
+                clienteNombre = a.User.Nombre,
             })
             .ToListAsync();
 
@@ -58,7 +58,7 @@ public class AsistenciasController : ControllerBase
     {
         var asistencia = new Asistencia
         {
-            ClienteId = dto.ClienteId,
+            UserId = dto.UserId,
             Fecha = dto.Fecha,
             HoraIngreso = dto.HoraIngreso,
         };
@@ -80,4 +80,4 @@ public class AsistenciasController : ControllerBase
     }
 }
 
-public record AsistenciaDto(int ClienteId, DateOnly Fecha, TimeOnly HoraIngreso);
+public record AsistenciaDto(string UserId, DateOnly Fecha, TimeOnly HoraIngreso);

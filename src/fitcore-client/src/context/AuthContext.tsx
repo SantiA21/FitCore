@@ -1,10 +1,11 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode } from "react";
 
 interface AuthUser {
+  id: string;
   email: string;
   nombre: string;
   apellido: string;
-  roles: string[];
+  categoria: string;
 }
 
 interface AuthContextType {
@@ -13,6 +14,8 @@ interface AuthContextType {
   login: (token: string, user: AuthUser) => void;
   logout: () => void;
   isAuthenticated: boolean;
+  isAdmin: boolean;
+  isCliente: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -40,8 +43,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
+  const categoriaStr =
+    user?.categoria === 0 || user?.categoria === "0" ? "Admin"
+    : user?.categoria === 1 || user?.categoria === "1" ? "Entrenador"
+    : user?.categoria === 2 || user?.categoria === "2" ? "Cliente"
+    : user?.categoria;
+
+  const isAdmin = categoriaStr === "Admin" || categoriaStr === "Entrenador";
+  const isCliente = categoriaStr === "Cliente";
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!token }}>
+    <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!token, isAdmin, isCliente }}>
       {children}
     </AuthContext.Provider>
   );

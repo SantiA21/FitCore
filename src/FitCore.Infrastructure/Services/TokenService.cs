@@ -1,4 +1,4 @@
-﻿using FitCore.Domain.Entities;
+using FitCore.Domain.Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -16,7 +16,7 @@ public class TokenService
         _config = config;
     }
 
-    public string GenerarToken(AppUser user, IList<string> roles)
+    public string GenerarToken(AppUser user)
     {
         var jwtSettings = _config.GetSection("JwtSettings");
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]!));
@@ -27,11 +27,8 @@ public class TokenService
             new(ClaimTypes.NameIdentifier, user.Id),
             new(ClaimTypes.Email, user.Email!),
             new(ClaimTypes.Name, $"{user.Nombre} {user.Apellido}"),
+            new(ClaimTypes.Role, user.Categoria.ToString()),
         };
-
-        // Agregar cada rol como claim
-        foreach (var rol in roles)
-            claims.Add(new Claim(ClaimTypes.Role, rol));
 
         var token = new JwtSecurityToken(
             issuer: jwtSettings["Issuer"],

@@ -100,6 +100,30 @@ namespace FitCore.Infrastructure.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("FitCore.Domain.Entities.Asistencia", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ClienteId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly>("Fecha")
+                        .HasColumnType("date");
+
+                    b.Property<TimeOnly>("HoraIngreso")
+                        .HasColumnType("time without time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClienteId");
+
+                    b.ToTable("Asistencias");
+                });
+
             modelBuilder.Entity("FitCore.Domain.Entities.Cliente", b =>
                 {
                     b.Property<int>("Id")
@@ -362,6 +386,17 @@ namespace FitCore.Infrastructure.Migrations
                     b.ToTable("Planes");
                 });
 
+            modelBuilder.Entity("FitCore.Domain.Entities.Asistencia", b =>
+                {
+                    b.HasOne("FitCore.Domain.Entities.Cliente", "Cliente")
+                        .WithMany("Asistencias")
+                        .HasForeignKey("ClienteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Cliente");
+                });
+
             modelBuilder.Entity("FitCore.Domain.Entities.Cliente", b =>
                 {
                     b.HasOne("Plan", "Plan")
@@ -460,6 +495,8 @@ namespace FitCore.Infrastructure.Migrations
 
             modelBuilder.Entity("FitCore.Domain.Entities.Cliente", b =>
                 {
+                    b.Navigation("Asistencias");
+
                     b.Navigation("Membresias");
                 });
 

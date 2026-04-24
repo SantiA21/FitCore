@@ -32,13 +32,15 @@ export default function Login() {
 
       const data = await res.json();
       login(data.token, {
+        id: data.id,
         email: data.email,
         nombre: data.nombre,
         apellido: data.apellido,
-        roles: data.roles,
+        categoria: data.categoria,
       });
 
-      navigate("/");
+      const esCliente = data.categoria === 2 || data.categoria === "Cliente";
+      navigate(esCliente ? "/dashboard-cliente" : "/dashboard-admin");
     } catch (err: unknown) {
       toast({
         variant: "destructive",
