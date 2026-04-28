@@ -88,6 +88,31 @@ public class MembresiasController : ControllerBase
         var result = await _service.GetPorVencer(dias);
         return Ok(result);
     }
+
+    // DELETE api/membresias/{userId}/activa  →  inactiva la membresía activa del usuario
+    [HttpDelete("{userId}/activa")]
+    public async Task<IActionResult> Inactivar(string userId)
+    {
+        var hoy = DateTime.UtcNow;
+        var membresia = await _context.Membresias
+            .Where(m => m.UserId == userId && m.Activa && m.FechaFin >= hoy)
+            .FirstOrDefaultAsync();
+
+        if (membresia is null) return NotFound();
+
+        membresia.Activa = false;
+        membresia.FechaFin = hoy;
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    // GET api/Membresias/usuario/{userId}
+    [HttpGet("usuario/{userId}")]
+    public async Task<IActionResult> GetByUsuario(string userId)
+    {
+        return Ok(await _service.GetByUserId(userId));
+    }
 }
 
 public class CrearMembresiaRequest

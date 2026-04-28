@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using FitCore.Infrastructure.Persistence;
 
 namespace FitCore.Api.Controllers;
 
@@ -13,12 +14,12 @@ namespace FitCore.Api.Controllers;
 public class ClientesController : ControllerBase
 {
     private readonly UserManager<AppUser> _userManager;
-    private readonly TokenService _tokenService;
+    private readonly AppDbContext _context;
 
-    public ClientesController(UserManager<AppUser> userManager, TokenService tokenService)
+    public ClientesController(UserManager<AppUser> userManager, AppDbContext context)
     {
         _userManager = userManager;
-        _tokenService = tokenService;
+        _context = context;
     }
 
     // GET api/clientes
@@ -26,7 +27,21 @@ public class ClientesController : ControllerBase
     public async Task<IActionResult> GetAll()
     {
         var usuarios = await _userManager.Users.ToListAsync();
-        return Ok(usuarios.Select(ToDto));
+
+        // Traer membresías activas de todos los usuarios en una sola query
+        var hoy = DateTime.UtcNow;
+        var membresiasActivas = await _context.Membresias
+            .Include(m => m.Plan)
+            .Where(m => m.Activa && m.FechaFin >= hoy)
+            .ToListAsync();
+
+        var result = usuarios.Select(u =>
+        {
+            var mem = membresiasActivas.FirstOrDefault(m => m.UserId == u.Id);
+            return ToDto(u, mem);
+        });
+
+        return Ok(result);
     }
 
     // GET api/clientes/{id}
@@ -35,7 +50,14 @@ public class ClientesController : ControllerBase
     {
         var user = await _userManager.FindByIdAsync(id);
         if (user is null) return NotFound();
-        return Ok(ToDto(user));
+
+        var hoy = DateTime.UtcNow;
+        var mem = await _context.Membresias
+            .Include(m => m.Plan)
+            .Where(m => m.UserId == id && m.Activa && m.FechaFin >= hoy)
+            .FirstOrDefaultAsync();
+
+        return Ok(ToDto(user, mem));
     }
 
     // GET api/clientes/activos/count
@@ -65,14 +87,13 @@ public class ClientesController : ControllerBase
             Activo = true,
         };
 
-        // Password opcional: si no se pasa se genera uno aleatorio
         var password = dto.Password ?? $"Temp_{Guid.NewGuid():N}!1A";
         var resultado = await _userManager.CreateAsync(user, password);
 
         if (!resultado.Succeeded)
             return BadRequest(new { errores = resultado.Errors.Select(e => e.Description) });
 
-        return CreatedAtAction(nameof(GetById), new { id = user.Id }, ToDto(user));
+        return CreatedAtAction(nameof(GetById), new { id = user.Id }, ToDto(user, null));
     }
 
     // PUT api/clientes/{id}
@@ -97,7 +118,7 @@ public class ClientesController : ControllerBase
         return NoContent();
     }
 
-    // DELETE api/clientes/{id}  →  soft delete
+    // DELETE api/clientes/{id} → soft delete
     [HttpDelete("{id}")]
     public async Task<IActionResult> Deactivate(string id)
     {
@@ -109,7 +130,7 @@ public class ClientesController : ControllerBase
         return NoContent();
     }
 
-    // DELETE api/clientes/{id}/permanente  →  hard delete
+    // DELETE api/clientes/{id}/permanente → hard delete
     [HttpDelete("{id}/permanente")]
     public async Task<IActionResult> HardDelete(string id)
     {
@@ -124,7 +145,7 @@ public class ClientesController : ControllerBase
     }
 
     // ── Helper ────────────────────────────────────────────────────────────────
-    private static UsuarioDto ToDto(AppUser u) => new(
+    private static UsuarioDto ToDto(AppUser u, Membresia? membresiaActiva) => new(
         u.Id,
         u.Nombre,
         u.Apellido,
@@ -132,7 +153,10 @@ public class ClientesController : ControllerBase
         u.Email ?? string.Empty,
         u.FechaAlta,
         u.Activo,
-        u.Categoria
+        u.Categoria,
+        membresiaActiva?.PlanId,
+        membresiaActiva?.Plan?.Nombre,
+        membresiaActiva?.FechaFin
     );
 }
 
@@ -146,7 +170,10 @@ public record UsuarioDto(
     string Email,
     DateTime FechaAlta,
     bool Activo,
-    FitCore.Domain.Entities.Categoria Categoria
+    FitCore.Domain.Entities.Categoria Categoria,
+    int? PlanId,
+    string? PlanNombre,
+    DateTime? MembresiaVence
 );
 
 public record CreateUsuarioDto(

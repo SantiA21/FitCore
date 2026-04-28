@@ -18,11 +18,7 @@ public class AppUser : IdentityUser
     public bool Activo { get; set; } = true;
     public Categoria Categoria { get; set; } = Categoria.Cliente;
 
-    // Relación con Plan (opcional)
-    public int? PlanId { get; set; }
-    public Plan? Plan { get; set; }
-
-    // Relaciones
+    // Relaciones — el plan actual se obtiene a través de la membresía activa
     public ICollection<Membresia> Membresias { get; set; } = [];
     public ICollection<Asistencia> Asistencias { get; set; } = [];
     public ICollection<Pago> Pagos { get; set; } = [];

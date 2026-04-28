@@ -14,4 +14,6 @@ public class Pago
     public DateTime Fecha { get; set; }
 
     public string Metodo { get; set; } = string.Empty;
+
+    public string? Nota { get; set; }
 }

@@ -51,6 +51,7 @@ public class PagoService
             MembresiaId = request.MembresiaId,
             Monto = montoFinal,
             Metodo = request.Metodo,
+            Nota = request.Nota,
             Fecha = DateTime.UtcNow
         };
 
@@ -71,13 +72,15 @@ public class PagoService
     {
         return await _context.Pagos
             .Include(p => p.User)
+            .OrderByDescending(p => p.Fecha)
             .Select(p => new PagoResponse
             {
                 Id = p.Id,
                 ClienteNombre = p.User.Nombre,
                 Monto = p.Monto,
                 Metodo = p.Metodo,
-                Fecha = p.Fecha
+                Fecha = p.Fecha,
+                Nota = p.Nota
             })
             .ToListAsync();
     }

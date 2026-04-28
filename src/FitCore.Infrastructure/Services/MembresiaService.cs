@@ -19,17 +19,23 @@ public class MembresiaService
 
     public async Task<MembresiaResponse> Crear(string userId, int planId)
     {
-        var existeActiva = await _context.Membresias
-            .AnyAsync(m => m.UserId == userId && m.FechaFin >= DateTime.UtcNow);
-
-        if (existeActiva)
-            throw new Exception("El cliente ya tiene una membresía activa");
-
         var user = await _userManager.FindByIdAsync(userId);
         var plan = await _context.Planes.FindAsync(planId);
 
         if (user == null || plan == null)
             throw new Exception("Usuario o Plan inválido");
+
+        // Si tiene una membresía activa, la desactivamos antes de crear la nueva
+        // Esto permite renovar o cambiar de plan en cualquier momento
+        var membresiaActiva = await _context.Membresias
+            .Where(m => m.UserId == userId && m.FechaFin >= DateTime.UtcNow && m.Activa)
+            .FirstOrDefaultAsync();
+
+        if (membresiaActiva is not null)
+        {
+            membresiaActiva.Activa = false;
+            membresiaActiva.FechaFin = DateTime.UtcNow; // la cerramos en el momento
+        }
 
         var hoy = DateTime.UtcNow;
 
@@ -48,7 +54,7 @@ public class MembresiaService
         return new MembresiaResponse
         {
             Id = membresia.Id,
-            ClienteNombre = user.Nombre,
+            ClienteNombre = $"{user.Nombre} {user.Apellido}",
             PlanNombre = plan.Nombre,
             FechaInicio = membresia.FechaInicio,
             FechaFin = membresia.FechaFin
@@ -60,11 +66,11 @@ public class MembresiaService
         return await _context.Membresias
             .Include(m => m.User)
             .Include(m => m.Plan)
-            .Where(m => m.FechaFin >= DateTime.UtcNow)
+            .Where(m => m.Activa && m.FechaFin >= DateTime.UtcNow)
             .Select(m => new MembresiaResponse
             {
                 Id = m.Id,
-                ClienteNombre = m.User.Nombre,
+                ClienteNombre = $"{m.User.Nombre} {m.User.Apellido}",
                 PlanNombre = m.Plan.Nombre,
                 FechaInicio = m.FechaInicio,
                 FechaFin = m.FechaFin
@@ -81,7 +87,7 @@ public class MembresiaService
             .Select(m => new MembresiaResponse
             {
                 Id = m.Id,
-                ClienteNombre = m.User.Nombre,
+                ClienteNombre = $"{m.User.Nombre} {m.User.Apellido}",
                 PlanNombre = m.Plan.Nombre,
                 FechaInicio = m.FechaInicio,
                 FechaFin = m.FechaFin
@@ -93,7 +99,7 @@ public class MembresiaService
     {
         var total = await _context.Membresias.CountAsync();
         var activas = await _context.Membresias
-            .CountAsync(m => m.FechaFin >= DateTime.UtcNow);
+            .CountAsync(m => m.Activa && m.FechaFin >= DateTime.UtcNow);
 
         return new
         {
@@ -111,11 +117,28 @@ public class MembresiaService
         return await _context.Membresias
             .Include(m => m.User)
             .Include(m => m.Plan)
-            .Where(m => m.FechaFin >= hoy && m.FechaFin <= limite)
+            .Where(m => m.Activa && m.FechaFin >= hoy && m.FechaFin <= limite)
             .Select(m => new MembresiaResponse
             {
                 Id = m.Id,
-                ClienteNombre = m.User.Nombre,
+                ClienteNombre = $"{m.User.Nombre} {m.User.Apellido}",
+                PlanNombre = m.Plan.Nombre,
+                FechaInicio = m.FechaInicio,
+                FechaFin = m.FechaFin
+            })
+            .ToListAsync();
+    }
+
+    public async Task<List<MembresiaResponse>> GetByUserId(string userId)
+    {
+        return await _context.Membresias
+            .Include(m => m.Plan)
+            .Where(m => m.UserId == userId && m.Activa)
+            .OrderByDescending(m => m.FechaInicio)
+            .Select(m => new MembresiaResponse
+            {
+                Id = m.Id,
+                ClienteNombre = string.Empty,
                 PlanNombre = m.Plan.Nombre,
                 FechaInicio = m.FechaInicio,
                 FechaFin = m.FechaFin

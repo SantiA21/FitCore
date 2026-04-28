@@ -20,13 +20,6 @@ public class AppDbContext : IdentityDbContext<AppUser>
     {
         base.OnModelCreating(builder);
 
-        // AppUser → Plan
-        builder.Entity<AppUser>()
-            .HasOne(u => u.Plan)
-            .WithMany()
-            .HasForeignKey(u => u.PlanId)
-            .OnDelete(DeleteBehavior.SetNull);
-
         // Membresia → AppUser
         builder.Entity<Membresia>()
             .HasOne(m => m.User)

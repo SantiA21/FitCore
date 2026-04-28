@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,9 +11,22 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+
+type Plan = {
+  id: number;
+  nombre: string;
+  precio: number;
+};
 
 export default function NuevoCliente() {
   const [form, setForm] = useState({
@@ -21,9 +34,18 @@ export default function NuevoCliente() {
     telefono: "",
     email: "",
   });
+  const [planes, setPlanes] = useState<Plan[]>([]);
+  const [planId, setPlanId] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    apiFetch("/api/planes")
+      .then((res) => res.json())
+      .then((data) => setPlanes(data))
+      .catch(() => {/* si falla, simplemente no hay planes */});
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -34,28 +56,51 @@ export default function NuevoCliente() {
     setLoading(true);
 
     try {
+      // 1. Crear el cliente
       const response = await apiFetch("/api/clientes", {
         method: "POST",
         body: JSON.stringify({ ...form, categoria: 2 }),
       });
 
-      if (response.ok) {
-        toast({
-          variant: "success",
-          title: "Cliente creado exitosamente",
-          description: `El cliente ${form.nombre} ha sido agregado correctamente.`,
-        });
-        setForm({ nombre: "", telefono: "", email: "" });
-        setTimeout(() => {
-          navigate("/clientes");
-        }, 1500);
-      } else {
+      if (!response.ok) {
         toast({
           variant: "destructive",
           title: "Error al crear cliente",
           description: "Hubo un problema al crear el cliente. Por favor, intenta nuevamente.",
         });
+        return;
       }
+
+      const nuevoCliente = await response.json();
+
+      // 2. Si se seleccionó un plan, crear la membresía
+      if (planId) {
+        const membresiaRes = await apiFetch("/api/membresias", {
+          method: "POST",
+          body: JSON.stringify({ userId: nuevoCliente.id, planId: parseInt(planId) }),
+        });
+
+        if (!membresiaRes.ok) {
+          // El cliente se creó pero la membresía falló
+          toast({
+            variant: "destructive",
+            title: "Cliente creado, pero no se pudo asignar el plan",
+            description: "Podés asignarle el plan desde el panel de clientes.",
+          });
+          setTimeout(() => navigate("/clientes"), 1500);
+          return;
+        }
+      }
+
+      toast({
+        variant: "success",
+        title: "Cliente creado exitosamente",
+        description: planId
+          ? `El cliente ${form.nombre} fue agregado con el plan asignado.`
+          : `El cliente ${form.nombre} ha sido agregado correctamente.`,
+      });
+      setForm({ nombre: "", telefono: "", email: "" });
+      setTimeout(() => navigate("/clientes"), 1500);
     } catch {
       toast({
         variant: "destructive",
@@ -114,6 +159,31 @@ export default function NuevoCliente() {
                 required
                 disabled={loading}
               />
+            </div>
+
+            {/* Plan opcional */}
+            <div className="space-y-2">
+              <Label htmlFor="plan">
+                Plan{" "}
+                <span className="text-gray-400 font-normal text-sm">(opcional)</span>
+              </Label>
+              <Select
+                value={planId}
+                onValueChange={(val) => setPlanId(val === "ninguno" ? "" : val)}
+                disabled={loading || planes.length === 0}
+              >
+                <SelectTrigger id="plan">
+                  <SelectValue placeholder={planes.length === 0 ? "Cargando planes..." : "Sin plan asignado"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ninguno">Sin plan</SelectItem>
+                  {planes.map((p) => (
+                    <SelectItem key={p.id} value={String(p.id)}>
+                      {p.nombre} — ${p.precio}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
           <CardFooter className="flex justify-end gap-2">
