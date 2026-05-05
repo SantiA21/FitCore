@@ -2,6 +2,7 @@ import { LayoutDashboard, Users, CreditCard, Calendar, User, LogOut, ClipboardLi
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
+import { ShieldCheck } from "lucide-react";
 
 interface NavItem {
   label: string;
@@ -10,11 +11,12 @@ interface NavItem {
 }
 
 const adminNavItems: NavItem[] = [
-  { label: "Dashboard",   icon: LayoutDashboard, path: "/dashboard-admin" },
-  { label: "Clientes",    icon: Users,            path: "/clientes" },
-  { label: "Planes",      icon: ClipboardList,    path: "/planes-admin" },
-  { label: "Pagos",       icon: CreditCard,       path: "/pagos" },
-  { label: "Asistencias", icon: Calendar,         path: "/asistencias" },
+  { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard-admin" },
+  { label: "Clientes", icon: Users, path: "/clientes" },
+  { label: "Planes", icon: ClipboardList, path: "/planes-admin" },
+  { label: "Pagos", icon: CreditCard, path: "/pagos" },
+  { label: "Estado de cuenta", icon: ShieldCheck, path: "/estado-cuenta" },
+  { label: "Asistencias", icon: Calendar, path: "/asistencias" },
 ];
 
 const clienteNavItems: NavItem[] = [

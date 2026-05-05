@@ -1,9 +1,11 @@
 ﻿using FitCore.Application.DTOs;
 using FitCore.Infrastructure.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FitCore.Api.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class PagosController : ControllerBase
@@ -15,7 +17,7 @@ public class PagosController : ControllerBase
         _service = service;
     }
 
-    // POST api/Pagos
+    // POST api/pagos
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CrearPagoRequest request)
     {
@@ -29,10 +31,25 @@ public class PagosController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
-    // GET api/Pagos
+
+    // GET api/pagos
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
         return Ok(await _service.GetAll());
+    }
+
+    // GET api/pagos/estado-cuenta
+    [HttpGet("estado-cuenta")]
+    public async Task<IActionResult> GetEstadoCuenta()
+    {
+        try
+        {
+            return Ok(await _service.GetEstadoCuenta());
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 }

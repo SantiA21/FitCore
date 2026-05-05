@@ -3,6 +3,7 @@ using FitCore.Domain.Entities;
 using FitCore.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace FitCore.Infrastructure.Services;
 
@@ -20,12 +21,43 @@ public class PagoService
     public async Task<PagoResponse> Crear(CrearPagoRequest request)
     {
         var user = await _userManager.FindByIdAsync(request.UserId);
-
         if (user == null)
             throw new Exception("Usuario no encontrado");
 
-        decimal montoFinal;
+        var hoy = DateTime.UtcNow;
+        int periodoMes = request.PeriodoMes ?? hoy.Month;
+        int periodoAnio = request.PeriodoAnio ?? hoy.Year;
 
+        // Validar que el período no sea más de 3 meses atrás
+        var periodoSolicitado = new DateTime(periodoAnio, periodoMes, 1, 0, 0, 0, DateTimeKind.Utc);
+        var limiteMinimo = new DateTime(hoy.Year, hoy.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(-3);
+        var limiteMaximo = new DateTime(hoy.Year, hoy.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        if (periodoSolicitado < limiteMinimo)
+            throw new Exception("Solo se pueden registrar pagos de los últimos 3 meses.");
+
+        if (periodoSolicitado > limiteMaximo)
+            throw new Exception("No se pueden registrar pagos de meses futuros.");
+
+        // Verificar que no haya pago para ese período
+        var yaExiste = await _context.Pagos.AnyAsync(p =>
+            p.UserId == request.UserId &&
+            p.PeriodoMes == periodoMes &&
+            p.PeriodoAnio == periodoAnio);
+
+        if (yaExiste)
+            throw new Exception($"Ya existe un pago registrado para {NombreMes(periodoMes, periodoAnio)}.");
+
+        // Verificar que tenga membresía activa
+        var tieneMembresia = await _context.Membresias.AnyAsync(m =>
+            m.UserId == request.UserId &&
+            m.Activa &&
+            m.FechaFin >= hoy);
+
+        if (!tieneMembresia)
+            throw new Exception("El cliente no tiene una membresía activa.");
+
+        decimal montoFinal;
         if (request.Monto.HasValue && request.Monto > 0)
         {
             montoFinal = request.Monto.Value;
@@ -33,14 +65,14 @@ public class PagoService
         else
         {
             if (request.MembresiaId == null)
-                throw new Exception("Debe especificar un monto o una membresía");
+                throw new Exception("Debe especificar un monto o una membresía.");
 
             var membresia = await _context.Membresias
                 .Include(m => m.Plan)
                 .FirstOrDefaultAsync(m => m.Id == request.MembresiaId);
 
             if (membresia == null)
-                throw new Exception("Membresía no encontrada");
+                throw new Exception("Membresía no encontrada.");
 
             montoFinal = membresia.Plan.Precio;
         }
@@ -52,7 +84,9 @@ public class PagoService
             Monto = montoFinal,
             Metodo = request.Metodo,
             Nota = request.Nota,
-            Fecha = DateTime.UtcNow
+            Fecha = DateTime.UtcNow,
+            PeriodoMes = periodoMes,
+            PeriodoAnio = periodoAnio,
         };
 
         _context.Pagos.Add(pago);
@@ -61,10 +95,13 @@ public class PagoService
         return new PagoResponse
         {
             Id = pago.Id,
-            ClienteNombre = user.Nombre,
+            ClienteNombre = $"{user.Nombre} {user.Apellido}",
             Monto = pago.Monto,
             Metodo = pago.Metodo,
-            Fecha = pago.Fecha
+            Fecha = pago.Fecha,
+            Nota = pago.Nota,
+            PeriodoMes = pago.PeriodoMes,
+            PeriodoAnio = pago.PeriodoAnio,
         };
     }
 
@@ -76,12 +113,107 @@ public class PagoService
             .Select(p => new PagoResponse
             {
                 Id = p.Id,
-                ClienteNombre = p.User.Nombre,
+                ClienteNombre = $"{p.User.Nombre} {p.User.Apellido}",
                 Monto = p.Monto,
                 Metodo = p.Metodo,
                 Fecha = p.Fecha,
-                Nota = p.Nota
+                Nota = p.Nota,
+                PeriodoMes = p.PeriodoMes,
+                PeriodoAnio = p.PeriodoAnio,
             })
             .ToListAsync();
+    }
+
+    public async Task<List<EstadoCuentaDto>> GetEstadoCuenta()
+    {
+        var hoy = DateTime.UtcNow;
+
+        // Generar los últimos 3 meses incluyendo el actual
+        var periodos = Enumerable.Range(0, 3)
+            .Select(i => {
+                var d = new DateTime(hoy.Year, hoy.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(-i);
+                return (Mes: d.Month, Anio: d.Year);
+            })
+            .OrderBy(p => p.Anio).ThenBy(p => p.Mes)
+            .ToList();
+
+        // Clientes con membresía activa
+        var clienteIds = await _context.Membresias
+            .Where(m => m.Activa && m.FechaFin >= hoy)
+            .Select(m => m.UserId)
+            .Distinct()
+            .ToListAsync();
+
+        var clientes = await _userManager.Users
+            .Where(u => u.Activo && clienteIds.Contains(u.Id))
+            .ToListAsync();
+
+        var membresias = await _context.Membresias
+            .Include(m => m.Plan)
+            .Where(m => clienteIds.Contains(m.UserId) && m.Activa && m.FechaFin >= hoy)
+            .ToListAsync();
+
+        // Pagos en los últimos 3 meses para estos clientes
+        var periodoMinMes = periodos.First().Mes;
+        var periodoMinAnio = periodos.First().Anio;
+
+        var pagos = await _context.Pagos
+            .Where(p => clienteIds.Contains(p.UserId) &&
+                        (p.PeriodoAnio > periodoMinAnio ||
+                        (p.PeriodoAnio == periodoMinAnio && p.PeriodoMes >= periodoMinMes)))
+            .ToListAsync();
+
+        return clientes.Select(c =>
+        {
+            var membresia = membresias.FirstOrDefault(m => m.UserId == c.Id);
+            var pagosCliente = pagos.Where(p => p.UserId == c.Id).ToList();
+
+            var detallePeriodos = periodos.Select(p =>
+            {
+                var pago = pagosCliente.FirstOrDefault(x => x.PeriodoMes == p.Mes && x.PeriodoAnio == p.Anio);
+                return new PeriodoEstado
+                {
+                    Mes = p.Mes,
+                    Anio = p.Anio,
+                    NombreMes = NombreMes(p.Mes, p.Anio),
+                    Pagado = pago is not null,
+                    Monto = pago?.Monto,
+                    Metodo = pago?.Metodo,
+                    FechaPago = pago?.Fecha,
+                };
+            }).ToList();
+
+            // Tiene deuda si algún mes anterior al actual no está pagado
+            var mesesAnteriores = detallePeriodos
+                .Where(p => !(p.Mes == hoy.Month && p.Anio == hoy.Year))
+                .ToList();
+
+            bool tieneDeuda = mesesAnteriores.Any(p => !p.Pagado);
+            bool mesActualPagado = detallePeriodos
+                .Any(p => p.Mes == hoy.Month && p.Anio == hoy.Year && p.Pagado);
+
+            string estadoGeneral = tieneDeuda ? "ConDeuda"
+                : mesActualPagado ? "AlDia"
+                : "PendienteMesActual"; // Membresía activa, sin deuda, pero aún no pagó este mes
+
+            return new EstadoCuentaDto
+            {
+                UserId = c.Id,
+                Nombre = $"{c.Nombre} {c.Apellido}",
+                Email = c.Email ?? string.Empty,
+                PlanNombre = membresia?.Plan?.Nombre,
+                MembresiaVence = membresia?.FechaFin,
+                EstadoGeneral = estadoGeneral,
+                Periodos = detallePeriodos,
+            };
+        })
+        .OrderBy(e => e.EstadoGeneral) // ConDeuda primero
+        .ToList();
+    }
+
+    private static string NombreMes(int mes, int anio)
+    {
+        var fecha = new DateTime(anio, mes, 1);
+        return fecha.ToString("MMMM yyyy", new CultureInfo("es-AR"));
     }
 }

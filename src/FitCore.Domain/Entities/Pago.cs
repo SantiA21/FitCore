@@ -11,9 +11,12 @@ public class Pago
     public Membresia? Membresia { get; set; }
 
     public decimal Monto { get; set; }
-    public DateTime Fecha { get; set; }
+    public DateTime Fecha { get; set; } = DateTime.UtcNow;
 
     public string Metodo { get; set; } = string.Empty;
-
     public string? Nota { get; set; }
+
+    // Período al que corresponde el pago
+    public int PeriodoMes { get; set; }
+    public int PeriodoAnio { get; set; }
 }

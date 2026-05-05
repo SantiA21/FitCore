@@ -12,6 +12,7 @@ import Asistencias from "./pages/Asistencias";
 import Planes from "./pages/Planes";
 import PlanesAdmin from "./pages/PlanesAdmin";
 import { Toaster } from "./components/ui/toaster";
+import EstadoCuenta from "./pages/EstadoCuenta";
 
 function App() {
   return (
@@ -41,6 +42,11 @@ function App() {
           <Route path="/pagos" element={
             <ProtectedRoute allowedCategorias={["Admin", "Entrenador"]}>
               <Layout><Pagos /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/estado-cuenta" element={
+            <ProtectedRoute allowedCategorias={["Admin", "Entrenador"]}>
+              <Layout><EstadoCuenta /></Layout>
             </ProtectedRoute>
           } />
           <Route path="/asistencias" element={
