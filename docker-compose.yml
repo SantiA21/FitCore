@@ -41,6 +41,8 @@ services:
       JwtSettings__Issuer: FitCoreApi
       JwtSettings__Audience: FitCoreClient
       JwtSettings__ExpirationDays: 7
+      MercadoPago__AccessToken: ${MERCADOPAGO_ACCESS_TOKEN}
+      MercadoPago__PublicKey: ${MERCADOPAGO_PUBLIC_KEY}
     ports:
       - "5192:8080"
 

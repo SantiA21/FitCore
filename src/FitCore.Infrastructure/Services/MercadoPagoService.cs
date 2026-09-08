@@ -57,9 +57,11 @@ public class MercadoPagoService
             var failure = string.IsNullOrWhiteSpace(backUrlFailure) ? $"{fallbackBase}/dashboard-cliente?mp_status=failure" : backUrlFailure;
             var pending = string.IsNullOrWhiteSpace(backUrlPending) ? $"{fallbackBase}/dashboard-cliente?mp_status=pending" : backUrlPending;
 
-            var payload = new
+            var isLocalhost = success.Contains("localhost", StringComparison.OrdinalIgnoreCase);
+
+            var payload = new Dictionary<string, object>
             {
-                items = new[]
+                ["items"] = new[]
                 {
                     new
                     {
@@ -70,21 +72,25 @@ public class MercadoPagoService
                         unit_price = Convert.ToDouble(plan.Precio)
                     }
                 },
-                payer = new
+                ["payer"] = new
                 {
                     name = user.Nombre,
                     surname = user.Apellido,
                     email = user.Email
                 },
-                back_urls = new
+                ["back_urls"] = new Dictionary<string, string>
                 {
-                    success,
-                    failure,
-                    pending
+                    ["success"] = success,
+                    ["failure"] = failure,
+                    ["pending"] = pending
                 },
-                auto_return = "approved",
-                external_reference = $"{user.Id}_{plan.Id}_{DateTime.UtcNow.Ticks}"
+                ["external_reference"] = $"{user.Id}_{plan.Id}_{DateTime.UtcNow.Ticks}"
             };
+
+            if (!isLocalhost)
+            {
+                payload["auto_return"] = "approved";
+            }
 
             var request = new HttpRequestMessage(HttpMethod.Post, "https://api.mercadopago.com/checkout/preferences")
             {
