@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -20,13 +20,139 @@ import {
   ShieldCheck,
   Sparkles,
   Lock,
+  AlertCircle,
+  CheckCircle2,
+  FlaskConical,
 } from "lucide-react";
+
+// Algoritmo de Luhn (Módulo 10) estándar bancario
+export function isValidLuhn(cardNumber: string): boolean {
+  const sanitized = cardNumber.replace(/\D/g, "");
+  if (sanitized.length < 13 || sanitized.length > 19) return false;
+
+  let sum = 0;
+  let shouldDouble = false;
+
+  for (let i = sanitized.length - 1; i >= 0; i--) {
+    let digit = parseInt(sanitized.charAt(i), 10);
+    if (shouldDouble) {
+      digit *= 2;
+      if (digit > 9) digit -= 9;
+    }
+    sum += digit;
+    shouldDouble = !shouldDouble;
+  }
+
+  return sum % 10 === 0;
+}
+
+export type CardBrand = "visa" | "mastercard" | "amex" | "cabal" | "generic";
+
+export function detectCardBrand(cardNumber: string): { brand: CardBrand; name: string; bgClass: string; badgeClass: string } {
+  const clean = cardNumber.replace(/\D/g, "");
+  if (/^4/.test(clean)) {
+    return {
+      brand: "visa",
+      name: "VISA",
+      bgClass: "from-blue-950 via-slate-900 to-zinc-950 border-blue-500/40 shadow-blue-950/40",
+      badgeClass: "bg-blue-600/30 text-blue-300 border-blue-500/50",
+    };
+  }
+  if (/^(5[1-5]|2[2-7])/.test(clean)) {
+    return {
+      brand: "mastercard",
+      name: "Mastercard",
+      bgClass: "from-orange-950 via-stone-900 to-zinc-950 border-orange-500/40 shadow-orange-950/40",
+      badgeClass: "bg-orange-600/30 text-orange-300 border-orange-500/50",
+    };
+  }
+  if (/^3[47]/.test(clean)) {
+    return {
+      brand: "amex",
+      name: "American Express",
+      bgClass: "from-cyan-950 via-slate-900 to-zinc-950 border-cyan-500/40 shadow-cyan-950/40",
+      badgeClass: "bg-cyan-600/30 text-cyan-300 border-cyan-500/50",
+    };
+  }
+  if (/^(589657|6042|6043)/.test(clean)) {
+    return {
+      brand: "cabal",
+      name: "Cabal",
+      bgClass: "from-rose-950 via-neutral-900 to-zinc-950 border-rose-500/40 shadow-rose-950/40",
+      badgeClass: "bg-rose-600/30 text-rose-300 border-rose-500/50",
+    };
+  }
+  return {
+    brand: "generic",
+    name: "Tarjeta",
+    bgClass: "from-zinc-900 via-zinc-800 to-zinc-950 border-zinc-700 shadow-zinc-950/40",
+    badgeClass: "bg-zinc-700/50 text-zinc-300 border-zinc-600",
+  };
+}
+
+export function validateExpiry(venc: string): { valid: boolean; error?: string } {
+  const parts = venc.split("/");
+  if (parts.length !== 2 || parts[0].length !== 2 || parts[1].length !== 2) {
+    return { valid: false, error: "Formato esperado MM/AA" };
+  }
+  const month = parseInt(parts[0], 10);
+  const year = parseInt(parts[1], 10) + 2000;
+
+  if (isNaN(month) || isNaN(year) || month < 1 || month > 12) {
+    return { valid: false, error: "El mes debe ser entre 01 y 12" };
+  }
+
+  const now = new Date();
+  const curYear = now.getFullYear();
+  const curMonth = now.getMonth() + 1;
+
+  if (year < curYear || (year === curYear && month < curMonth)) {
+    return { valid: false, error: "La tarjeta se encuentra vencida" };
+  }
+  if (year > curYear + 15) {
+    return { valid: false, error: "Año de vencimiento inválido" };
+  }
+
+  return { valid: true };
+}
+
+// Presets de tarjetas de prueba oficiales de Mercado Pago / Industria
+const TEST_CARDS = [
+  {
+    label: "Visa Test (Aprobada)",
+    numero: "4509 9535 6623 3704",
+    titular: "APRO PEREZ",
+    vencimiento: "12/28",
+    cvv: "123",
+    dni: "38123456",
+    color: "border-blue-300 text-blue-700 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800",
+  },
+  {
+    label: "Mastercard Test (Aprobada)",
+    numero: "5031 7557 3453 0604",
+    titular: "APRO GOMEZ",
+    vencimiento: "10/29",
+    cvv: "456",
+    dni: "35987654",
+    color: "border-orange-300 text-orange-700 bg-orange-50 hover:bg-orange-100 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-800",
+  },
+  {
+    label: "Tarjeta Inválida (Rechazo)",
+    numero: "1234 5678 9012 3456",
+    titular: "JUAN RECHAZADO",
+    vencimiento: "05/30",
+    cvv: "999",
+    dni: "40111222",
+    color: "border-red-300 text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800",
+  },
+];
 
 export type PlanParaCheckout = {
   id: number;
   nombre: string;
   precio: number;
   duracionEnDias: number;
+  tipo?: number;
 };
 
 interface CheckoutModalProps {
@@ -70,6 +196,34 @@ export default function CheckoutModal({
   if (!plan) return null;
 
   const precioFormatted = `$${plan.precio.toLocaleString("es-AR")}`;
+
+  // Validación y marca dinámica de tarjeta
+  const cardBrand = useMemo(() => detectCardBrand(tarjeta.numero), [tarjeta.numero]);
+  const cleanCardNumber = useMemo(() => tarjeta.numero.replace(/\s/g, ""), [tarjeta.numero]);
+
+  const luhnStatus = useMemo(() => {
+    if (cleanCardNumber.length < 13) return null;
+    return isValidLuhn(cleanCardNumber);
+  }, [cleanCardNumber]);
+
+  const expiryStatus = useMemo(() => {
+    if (tarjeta.vencimiento.length < 5) return null;
+    return validateExpiry(tarjeta.vencimiento);
+  }, [tarjeta.vencimiento]);
+
+  const cargarTarjetaPrueba = (preset: typeof TEST_CARDS[number]) => {
+    setTarjeta({
+      numero: preset.numero,
+      titular: preset.titular,
+      vencimiento: preset.vencimiento,
+      cvv: preset.cvv,
+      dni: preset.dni,
+    });
+    toast({
+      title: `Tarjeta cargada: ${preset.label}`,
+      description: "Datos de prueba listos en el formulario.",
+    });
+  };
 
   // Formateo de número de tarjeta con espacios
   const handleNumeroTarjetaChange = (val: string) => {
@@ -177,16 +331,29 @@ export default function CheckoutModal({
   const handlePagarTarjeta = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanNum = tarjeta.numero.replace(/\s/g, "");
-    if (cleanNum.length < 15) {
-      toast({ variant: "destructive", title: "Número de tarjeta inválido", description: "Verificá los 16 dígitos." });
+    if (cleanNum.length < 13 || cleanNum.length > 19) {
+      toast({ variant: "destructive", title: "Número de tarjeta incompleto", description: "Verificá los 16 dígitos de la tarjeta." });
+      return;
+    }
+    if (!isValidLuhn(cleanNum)) {
+      toast({
+        variant: "destructive",
+        title: "Tarjeta inválida (Falla de Luhn)",
+        description: "El número no supera la verificación bancaria estándar. Verificá los dígitos o usá una tarjeta de prueba.",
+      });
       return;
     }
     if (!tarjeta.titular.trim()) {
       toast({ variant: "destructive", title: "Falta el titular", description: "Ingresá el nombre que figura en la tarjeta." });
       return;
     }
-    if (!tarjeta.vencimiento || tarjeta.vencimiento.length < 5) {
-      toast({ variant: "destructive", title: "Vencimiento inválido", description: "Formato esperado MM/AA." });
+    const expCheck = validateExpiry(tarjeta.vencimiento);
+    if (!expCheck.valid) {
+      toast({
+        variant: "destructive",
+        title: "Vencimiento inválido",
+        description: expCheck.error ?? "Verificá la fecha de vencimiento (MM/AA).",
+      });
       return;
     }
     if (!tarjeta.cvv || tarjeta.cvv.length < 3) {
@@ -204,7 +371,7 @@ export default function CheckoutModal({
           titular: tarjeta.titular.trim(),
           vencimiento: tarjeta.vencimiento,
           cvv: tarjeta.cvv,
-          dni: tarjeta.dni.trim(),
+          dni: tarjeta.dni.trim() || null,
         }),
       });
 
@@ -404,44 +571,113 @@ export default function CheckoutModal({
           {/* ────────────────── CONTENIDO: TARJETA ────────────────── */}
           {tab === "tarjeta" && (
             <form onSubmit={handlePagarTarjeta} className="space-y-4 pt-1 animate-in fade-in duration-200">
-              {/* Tarjeta Visual Previa */}
-              <div className="bg-gradient-to-tr from-zinc-900 via-zinc-800 to-zinc-950 text-white rounded-2xl p-5 shadow-lg border border-zinc-700 relative overflow-hidden space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-mono text-zinc-400">FITCORE PAY</span>
-                  <CreditCard className="w-6 h-6 text-orange-400" />
+              {/* Presets de prueba */}
+              <div className="bg-amber-500/10 border border-amber-500/25 rounded-2xl p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+                    <FlaskConical className="w-3.5 h-3.5 text-amber-600" />
+                    Tarjetas de Test (1 clic)
+                  </span>
+                  <span className="text-[10px] text-amber-700 dark:text-amber-400 font-medium">
+                    Oficiales Mercado Pago
+                  </span>
                 </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+                  {TEST_CARDS.map((tc, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => cargarTarjetaPrueba(tc)}
+                      className={`text-[11px] px-2.5 py-1.5 rounded-lg border font-semibold text-left transition-all cursor-pointer shadow-xs ${tc.color}`}
+                    >
+                      {tc.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tarjeta Visual Previa */}
+              <div
+                className={`bg-gradient-to-tr ${cardBrand.bgClass} text-white rounded-2xl p-5 shadow-lg border relative overflow-hidden space-y-4 transition-all duration-300`}
+              >
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono tracking-wider text-zinc-300">FITCORE PAY</span>
+                    {luhnStatus === true && (
+                      <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-medium">
+                        <CheckCircle2 className="w-3 h-3" />
+                        Luhn OK
+                      </span>
+                    )}
+                    {luhnStatus === false && (
+                      <span className="inline-flex items-center gap-1 text-[10px] bg-red-500/20 text-red-300 border border-red-500/30 px-2 py-0.5 rounded-full font-medium">
+                        <AlertCircle className="w-3 h-3" />
+                        Inválida
+                      </span>
+                    )}
+                  </div>
+                  <div className={`px-2.5 py-0.5 rounded-md border text-xs font-black tracking-wider uppercase ${cardBrand.badgeClass}`}>
+                    {cardBrand.name}
+                  </div>
+                </div>
+
                 <div className="py-1">
-                  <span className="font-mono text-lg tracking-widest text-zinc-200">
+                  <span className="font-mono text-lg sm:text-xl tracking-widest text-zinc-100">
                     {tarjeta.numero || "•••• •••• •••• ••••"}
                   </span>
                 </div>
+
                 <div className="flex justify-between items-end text-xs">
                   <div>
                     <span className="text-[10px] text-zinc-400 uppercase tracking-widest block">Titular</span>
-                    <span className="font-semibold uppercase tracking-wider">
+                    <span className="font-semibold uppercase tracking-wider text-zinc-100">
                       {tarjeta.titular || "NOMBRE Y APELLIDO"}
                     </span>
                   </div>
                   <div>
                     <span className="text-[10px] text-zinc-400 uppercase tracking-widest block">Vence</span>
-                    <span className="font-mono">{tarjeta.vencimiento || "MM/AA"}</span>
+                    <span className="font-mono text-zinc-100">{tarjeta.vencimiento || "MM/AA"}</span>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="tarjeta-numero" className="text-xs font-semibold text-gray-700">
-                    Número de Tarjeta
-                  </Label>
-                  <Input
-                    id="tarjeta-numero"
-                    placeholder="1234 5678 9012 3456"
-                    value={tarjeta.numero}
-                    onChange={(e) => handleNumeroTarjetaChange(e.target.value)}
-                    disabled={loading}
-                    required
-                  />
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="tarjeta-numero" className="text-xs font-semibold text-gray-700">
+                      Número de Tarjeta
+                    </Label>
+                    {luhnStatus === true && (
+                      <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" /> Número válido ({cardBrand.name})
+                      </span>
+                    )}
+                    {luhnStatus === false && (
+                      <span className="text-[11px] font-semibold text-red-600 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" /> Falla algoritmo de Luhn
+                      </span>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <Input
+                      id="tarjeta-numero"
+                      placeholder="1234 5678 9012 3456"
+                      value={tarjeta.numero}
+                      onChange={(e) => handleNumeroTarjetaChange(e.target.value)}
+                      disabled={loading}
+                      className={
+                        luhnStatus === true
+                          ? "border-emerald-500 ring-1 ring-emerald-500/20"
+                          : luhnStatus === false
+                          ? "border-red-500 ring-1 ring-red-500/20"
+                          : ""
+                      }
+                      required
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-xs font-bold text-gray-400">
+                      {cardBrand.name}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-1.5">
@@ -469,8 +705,18 @@ export default function CheckoutModal({
                       value={tarjeta.vencimiento}
                       onChange={(e) => handleVencimientoChange(e.target.value)}
                       disabled={loading}
+                      className={
+                        expiryStatus?.valid === true
+                          ? "border-emerald-500"
+                          : expiryStatus?.valid === false
+                          ? "border-red-500"
+                          : ""
+                      }
                       required
                     />
+                    {expiryStatus?.valid === false && (
+                      <p className="text-[10px] text-red-500">{expiryStatus.error}</p>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">
@@ -507,8 +753,8 @@ export default function CheckoutModal({
 
               <Button
                 type="submit"
-                disabled={loading}
-                className="w-full h-12 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold shadow-md shadow-orange-600/20 flex items-center justify-center gap-2 cursor-pointer transition-all mt-2"
+                disabled={loading || luhnStatus === false || expiryStatus?.valid === false}
+                className="w-full h-12 rounded-xl bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white text-sm font-bold shadow-md shadow-orange-600/20 flex items-center justify-center gap-2 cursor-pointer transition-all mt-2"
               >
                 {loading ? (
                   "Procesando pago..."
