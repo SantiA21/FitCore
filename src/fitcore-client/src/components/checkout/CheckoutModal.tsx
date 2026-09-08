@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -193,23 +193,11 @@ export default function CheckoutModal({
   const [copiadoAlias, setCopiadoAlias] = useState(false);
   const [copiadoCbu, setCopiadoCbu] = useState(false);
 
-  if (!plan) return null;
-
-  const precioFormatted = `$${plan.precio.toLocaleString("es-AR")}`;
-
-  // Validación y marca dinámica de tarjeta
-  const cardBrand = useMemo(() => detectCardBrand(tarjeta.numero), [tarjeta.numero]);
-  const cleanCardNumber = useMemo(() => tarjeta.numero.replace(/\s/g, ""), [tarjeta.numero]);
-
-  const luhnStatus = useMemo(() => {
-    if (cleanCardNumber.length < 13) return null;
-    return isValidLuhn(cleanCardNumber);
-  }, [cleanCardNumber]);
-
-  const expiryStatus = useMemo(() => {
-    if (tarjeta.vencimiento.length < 5) return null;
-    return validateExpiry(tarjeta.vencimiento);
-  }, [tarjeta.vencimiento]);
+  // Validación y marca dinámica de tarjeta (cálculo en tiempo real sin hooks)
+  const cardBrand = detectCardBrand(tarjeta.numero);
+  const cleanCardNumber = tarjeta.numero.replace(/\s/g, "");
+  const luhnStatus = cleanCardNumber.length < 13 ? null : isValidLuhn(cleanCardNumber);
+  const expiryStatus = tarjeta.vencimiento.length < 5 ? null : validateExpiry(tarjeta.vencimiento);
 
   const cargarTarjetaPrueba = (preset: typeof TEST_CARDS[number]) => {
     setTarjeta({
@@ -445,6 +433,10 @@ export default function CheckoutModal({
       setLoading(false);
     }
   };
+
+  if (!plan) return null;
+
+  const precioFormatted = `$${(plan.precio ?? 0).toLocaleString("es-AR")}`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
