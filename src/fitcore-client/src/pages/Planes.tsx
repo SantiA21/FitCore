@@ -114,15 +114,27 @@ export default function Planes() {
 
     // Verificación de retorno desde Mercado Pago (si viene por query string)
     const params = new URLSearchParams(window.location.search);
-    const mpStatus = params.get("mp_status") || params.get("collection_status");
-    const planIdStr = params.get("plan_id");
+    const mpStatus = params.get("mp_status") || params.get("collection_status") || params.get("status");
+    let planId = params.get("plan_id") ? Number(params.get("plan_id")) : null;
 
-    if (mpStatus === "approved" && planIdStr) {
+    if (!planId) {
+      const extRef = params.get("external_reference");
+      if (extRef) {
+        const parts = extRef.split("_");
+        if (parts.length >= 2 && !isNaN(Number(parts[1]))) {
+          planId = Number(parts[1]);
+        }
+      }
+    }
+
+    const paymentId = params.get("payment_id") || params.get("collection_id") || params.get("merchant_order_id");
+
+    if (mpStatus === "approved" && planId) {
       apiFetch("/api/pagos-cliente/confirmar-mercadopago", {
         method: "POST",
         body: JSON.stringify({
-          planId: Number(planIdStr),
-          paymentId: params.get("payment_id") || params.get("collection_id") || "MP-APPROVED",
+          planId,
+          paymentId: paymentId || "MP-ONLINE",
           status: "approved",
         }),
       }).then((res) => {
@@ -130,14 +142,16 @@ export default function Planes() {
           toast({
             variant: "success",
             title: "¡Pago de Mercado Pago aprobado!",
-            description: "Tu membresía fue activada correctamente.",
+            description: paymentId
+              ? `Operación #${paymentId}. Tu membresía fue activada correctamente.`
+              : "Tu membresía fue activada correctamente.",
           });
           fetchMiMembresia();
           fetchMisPagos();
         }
       });
 
-      // Limpiar parámetros de la URL sin recargar
+      // Limpiar parámetros de la URL sin recargar la página
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [fetchPlanes, fetchMiMembresia, fetchMisPagos, toast]);
