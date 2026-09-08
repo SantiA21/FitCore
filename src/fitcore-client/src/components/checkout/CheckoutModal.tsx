@@ -296,8 +296,8 @@ export default function CheckoutModal({
         onOpenChange(false);
         onPaymentSuccess();
       } else {
-        // Redirigir a la URL real de Mercado Pago (Sandbox o Producción)
-        const targetUrl = pref.sandboxInitPoint || pref.initPoint;
+        // Redirigir a la URL oficial de Mercado Pago (initPoint evita los bucles de sandbox)
+        const targetUrl = pref.initPoint || pref.sandboxInitPoint;
         if (targetUrl) {
           window.location.href = targetUrl;
         } else {
