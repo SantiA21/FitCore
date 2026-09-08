@@ -20,7 +20,7 @@ const adminNavItems: NavItem[] = [
 ];
 
 const clienteNavItems: NavItem[] = [
-  { label: "Planes", icon: ClipboardList, path: "/dashboard-cliente" },
+  { label: "Mi Membresía", icon: ClipboardList, path: "/dashboard-cliente" },
 ];
 
 export default function Sidebar() {

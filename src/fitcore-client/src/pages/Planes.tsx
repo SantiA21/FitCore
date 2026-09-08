@@ -1,21 +1,36 @@
-import { useEffect, useState } from "react";
-import { CheckCircle2, Clock } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import {
+  CheckCircle2,
+  Clock,
+  Receipt,
+  CreditCard,
+  Building2,
+  ShieldCheck,
+  Check,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
 import {
-  Dialog, DialogContent, DialogDescription,
-  DialogFooter, DialogHeader, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
-  Select, SelectContent, SelectItem,
-  SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
-import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
+import CheckoutModal, { type PlanParaCheckout } from "@/components/checkout/CheckoutModal";
 
 type Plan = {
   id: number;
@@ -34,19 +49,33 @@ type MiMembresia = {
   fechaFin: string;
 };
 
+type PagoHistorial = {
+  id: number;
+  membresiaId: number | null;
+  planNombre: string;
+  monto: number;
+  montoFormatted: string;
+  fecha: string;
+  fechaFormatted: string;
+  metodo: string;
+  nota: string | null;
+  periodoMes: number;
+  periodoAnio: number;
+};
+
 export default function Planes() {
-  const { user } = useAuth();
   const { toast } = useToast();
 
   const [planes, setPlanes] = useState<Plan[]>([]);
   const [miMembresia, setMiMembresia] = useState<MiMembresia | null>(null);
+  const [misPagos, setMisPagos] = useState<PagoHistorial[]>([]);
   const [loadingPlanes, setLoadingPlanes] = useState(true);
   const [loadingMembresia, setLoadingMembresia] = useState(true);
+  const [loadingPagos, setLoadingPagos] = useState(true);
 
-  // Modal confirmación
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [planSeleccionado, setPlanSeleccionado] = useState<Plan | null>(null);
-  const [contratando, setContratando] = useState(false);
+  // Modal Checkout Multimétodo
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [planParaCheckout, setPlanParaCheckout] = useState<PlanParaCheckout | null>(null);
 
   // Modal baja cliente
   const [bajaOpen, setBajaOpen] = useState(false);
@@ -54,50 +83,78 @@ export default function Planes() {
   const [observacionBaja, setObservacionBaja] = useState("");
   const [cancelando, setCancelando] = useState(false);
 
-  useEffect(() => {
-    apiFetch("/api/planes")
-      .then((r) => r.json())
-      .then((data: Plan[]) => setPlanes(data.filter((p) => p.activo)))
-      .finally(() => setLoadingPlanes(false));
-
+  const fetchMiMembresia = useCallback(() => {
+    setLoadingMembresia(true);
     apiFetch("/api/membresias/mi-membresia")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => setMiMembresia(data))
       .finally(() => setLoadingMembresia(false));
   }, []);
 
-  const handleContratar = (plan: Plan) => {
-    setPlanSeleccionado(plan);
-    setConfirmOpen(true);
+  const fetchMisPagos = useCallback(() => {
+    setLoadingPagos(true);
+    apiFetch("/api/pagos-cliente/mis-pagos")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data: PagoHistorial[]) => setMisPagos(data))
+      .finally(() => setLoadingPagos(false));
+  }, []);
+
+  const fetchPlanes = useCallback(() => {
+    setLoadingPlanes(true);
+    apiFetch("/api/planes")
+      .then((r) => r.json())
+      .then((data: Plan[]) => setPlanes(data.filter((p) => p.activo)))
+      .finally(() => setLoadingPlanes(false));
+  }, []);
+
+  useEffect(() => {
+    fetchPlanes();
+    fetchMiMembresia();
+    fetchMisPagos();
+
+    // Verificación de retorno desde Mercado Pago (si viene por query string)
+    const params = new URLSearchParams(window.location.search);
+    const mpStatus = params.get("mp_status") || params.get("collection_status");
+    const planIdStr = params.get("plan_id");
+
+    if (mpStatus === "approved" && planIdStr) {
+      apiFetch("/api/pagos-cliente/confirmar-mercadopago", {
+        method: "POST",
+        body: JSON.stringify({
+          planId: Number(planIdStr),
+          paymentId: params.get("payment_id") || params.get("collection_id") || "MP-APPROVED",
+          status: "approved",
+        }),
+      }).then((res) => {
+        if (res.ok) {
+          toast({
+            variant: "success",
+            title: "¡Pago de Mercado Pago aprobado!",
+            description: "Tu membresía fue activada correctamente.",
+          });
+          fetchMiMembresia();
+          fetchMisPagos();
+        }
+      });
+
+      // Limpiar parámetros de la URL sin recargar
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [fetchPlanes, fetchMiMembresia, fetchMisPagos, toast]);
+
+  const handleAbrirCheckout = (plan: Plan) => {
+    setPlanParaCheckout({
+      id: plan.id,
+      nombre: plan.nombre,
+      precio: plan.precio,
+      duracionEnDias: plan.duracionEnDias,
+    });
+    setCheckoutOpen(true);
   };
 
-  const handleConfirmar = async () => {
-    if (!planSeleccionado || !user) return;
-    setContratando(true);
-    try {
-      const res = await apiFetch("/api/membresias", {
-        method: "POST",
-        body: JSON.stringify({ userId: user.id, planId: planSeleccionado.id }),
-      });
-      if (!res.ok) throw new Error();
-
-      const nueva = await res.json();
-      setMiMembresia({
-        id: nueva.id,
-        planId: planSeleccionado.id,
-        planNombre: planSeleccionado.nombre,
-        planPrecio: planSeleccionado.precio,
-        fechaInicio: nueva.fechaInicio,
-        fechaFin: nueva.fechaFin,
-      });
-
-      setConfirmOpen(false);
-      toast({ variant: "success", title: "¡Plan contratado!", description: `Ahora estás en el plan ${planSeleccionado.nombre}.` });
-    } catch {
-      toast({ variant: "destructive", title: "No se pudo contratar", description: "Intentá nuevamente." });
-    } finally {
-      setContratando(false);
-    }
+  const handlePaymentSuccess = () => {
+    fetchMiMembresia();
+    fetchMisPagos();
   };
 
   const handleConfirmarBajaMiMembresia = async () => {
@@ -139,42 +196,66 @@ export default function Planes() {
     : null;
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-2xl font-semibold text-black">Planes</h1>
-
-      {/* ── Membresía activa ── */}
+    <div className="space-y-10 max-w-6xl mx-auto pb-12">
+      {/* Header */}
       <div>
-        <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Tu membresía</h2>
+        <h1 className="text-3xl font-black text-black tracking-tight">Tu Cuenta y Membresía</h1>
+        <p className="text-sm text-gray-500 mt-1">
+          Gestioná tu plan activo, realizá pagos seguros y consultá tu historial.
+        </p>
+      </div>
+
+      {/* ── 1. Membresía activa ── */}
+      <div>
+        <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+          <ShieldCheck className="w-4 h-4 text-gray-500" /> Estado de tu Membresía
+        </h2>
+
         {loadingMembresia ? (
-          <Skeleton className="h-24 w-full rounded-lg" />
+          <Skeleton className="h-32 w-full rounded-2xl" />
         ) : miMembresia ? (
-          <div className="bg-black text-white rounded-lg p-5">
-            <div className="flex items-center justify-between">
+          <div className="bg-zinc-950 text-white rounded-3xl p-6 shadow-xl border border-zinc-800 relative overflow-hidden">
+            <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 w-48 h-48 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <CheckCircle2 className="h-4 w-4 text-green-400" />
-                  <span className="text-sm font-medium text-green-400">Activa</span>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+                    Membresía Activa
+                  </span>
                 </div>
-                <p className="text-lg font-semibold">{miMembresia.planNombre}</p>
-                <p className="text-sm text-gray-400 mt-0.5">
-                  Vence el {new Date(miMembresia.fechaFin).toLocaleDateString("es-AR", { day: "numeric", month: "long", year: "numeric" })}
+                <h3 className="text-2xl font-black text-white">{miMembresia.planNombre}</h3>
+                <p className="text-sm text-zinc-400 mt-1">
+                  Vence el{" "}
+                  <strong className="text-zinc-200">
+                    {new Date(miMembresia.fechaFin).toLocaleDateString("es-AR", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </strong>
                 </p>
               </div>
-              <div className="text-right">
-                <div className="flex items-center gap-1.5 justify-end">
-                  <Clock className="h-4 w-4 text-gray-400" />
-                  <span className="text-2xl font-bold">{diasRestantes}</span>
+
+              <div className="flex items-center sm:flex-col sm:items-end gap-3 sm:gap-1 bg-zinc-900/80 px-4 py-3 rounded-2xl border border-zinc-800/80 shrink-0">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-orange-400" />
+                  <span className="text-3xl font-black text-white">{diasRestantes}</span>
                 </div>
-                <p className="text-xs text-gray-400">días restantes</p>
+                <p className="text-xs text-zinc-400 font-medium">días restantes</p>
               </div>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-gray-800 flex justify-end">
+            <div className="mt-6 pt-4 border-t border-zinc-800/80 flex items-center justify-between">
+              <span className="text-xs text-zinc-500">
+                Podés renovar tu plan o cambiar a uno superior en cualquier momento.
+              </span>
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="text-xs text-red-400 hover:text-red-300 hover:bg-red-950/40 h-7 px-2.5"
+                className="text-xs text-red-400 hover:text-red-300 hover:bg-red-950/40 h-8 px-3 rounded-xl cursor-pointer"
                 onClick={() => {
                   setMotivoBaja("Económico / Presupuesto");
                   setObservacionBaja("");
@@ -186,53 +267,98 @@ export default function Planes() {
             </div>
           </div>
         ) : (
-          <div className="bg-gray-50 border border-dashed border-gray-200 rounded-lg p-5 text-center">
-            <p className="text-sm text-gray-500">No tenés una membresía activa.</p>
-            <p className="text-xs text-gray-400 mt-1">Elegí un plan para empezar.</p>
+          <div className="bg-white border border-gray-200 rounded-3xl p-8 text-center space-y-3 shadow-xs">
+            <div className="w-12 h-12 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center mx-auto shadow-xs">
+              <Clock className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-gray-900">No tenés una membresía activa</h3>
+              <p className="text-xs text-gray-500 max-w-sm mx-auto mt-1">
+                Elegí uno de los planes disponibles a continuación para comenzar a entrenar hoy mismo.
+              </p>
+            </div>
           </div>
         )}
       </div>
 
-      {/* ── Planes disponibles ── */}
+      {/* ── 2. Planes disponibles ── */}
       <div>
-        <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Planes disponibles</h2>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+              <CreditCard className="w-4 h-4 text-gray-500" /> Planes Disponibles
+            </h2>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Pagá online con Mercado Pago, Tarjeta o Transferencia bancaria directa.
+            </p>
+          </div>
+        </div>
+
         {loadingPlanes ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-44 rounded-lg" />
+              <Skeleton key={i} className="h-64 rounded-3xl" />
             ))}
           </div>
         ) : planes.length === 0 ? (
-          <p className="text-sm text-gray-400">No hay planes disponibles por el momento.</p>
+          <p className="text-sm text-gray-400 py-8 text-center">No hay planes disponibles por el momento.</p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {planes.map((p) => {
               const esActual = miMembresia?.planId === p.id;
               return (
                 <div
                   key={p.id}
-                  className={[
-                    "bg-white border rounded-lg p-5 flex flex-col justify-between transition-shadow hover:shadow-sm",
-                    esActual ? "border-black" : "border-gray-200",
-                  ].join(" ")}
+                  className={`bg-white rounded-3xl p-6 flex flex-col justify-between transition-all duration-200 border ${
+                    esActual
+                      ? "border-orange-500 shadow-md ring-2 ring-orange-500/20"
+                      : "border-gray-200 hover:border-gray-300 hover:shadow-lg hover:-translate-y-1"
+                  }`}
                 >
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-base font-semibold text-black">{p.nombre}</h3>
-                      {esActual && <Badge variant="default">Tu plan</Badge>}
+                      <h3 className="text-lg font-black text-gray-900">{p.nombre}</h3>
+                      {esActual && (
+                        <span className="px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-700 text-[11px] font-bold">
+                          Tu plan actual
+                        </span>
+                      )}
                     </div>
-                    <p className="text-2xl font-bold text-black">
-                      ${p.precio.toLocaleString("es-AR")}
-                    </p>
-                    <p className="text-sm text-gray-400 mt-1">{p.duracionEnDias} días</p>
+
+                    <div className="py-2">
+                      <p className="text-3xl font-black text-gray-900 tracking-tight">
+                        ${p.precio.toLocaleString("es-AR")}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1 font-medium">
+                        Válido por {p.duracionEnDias} días
+                      </p>
+                    </div>
+
+                    <ul className="text-xs text-gray-600 space-y-2 mt-4 pt-4 border-t border-gray-100">
+                      <li className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>Acceso ilimitado a las instalaciones</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>Registro automático de asistencias</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>Múltiples métodos de pago online</span>
+                      </li>
+                    </ul>
                   </div>
 
                   <Button
-                    className="mt-5 w-full"
-                    variant={esActual ? "outline" : "default"}
-                    onClick={() => handleContratar(p)}
+                    onClick={() => handleAbrirCheckout(p)}
+                    className={`mt-6 w-full h-11 rounded-2xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
+                      esActual
+                        ? "bg-zinc-900 hover:bg-black text-white"
+                        : "bg-orange-600 hover:bg-orange-700 text-white shadow-md shadow-orange-600/20"
+                    }`}
                   >
-                    {esActual ? "Renovar" : "Contratar"}
+                    {esActual ? "Renovar Plan" : "Contratar Plan"}
                   </Button>
                 </div>
               );
@@ -241,34 +367,91 @@ export default function Planes() {
         )}
       </div>
 
-      {/* ── Modal confirmación ── */}
-      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {miMembresia?.planId === planSeleccionado?.id ? "Renovar plan" : "Contratar plan"}
-            </DialogTitle>
-            <DialogDescription>
-              {miMembresia && miMembresia.planId !== planSeleccionado?.id
-                ? `Vas a cambiar tu plan actual (${miMembresia.planNombre}) por ${planSeleccionado?.nombre}.`
-                : `Vas a contratar el plan ${planSeleccionado?.nombre} por $${planSeleccionado?.precio.toLocaleString("es-AR")}.`
-              }
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="mt-4">
-            <Button type="button" variant="outline" onClick={() => setConfirmOpen(false)} disabled={contratando}>
-              Cancelar
-            </Button>
-            <Button type="button" onClick={handleConfirmar} disabled={contratando}>
-              {contratando ? "Procesando..." : "Confirmar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* ── 3. Historial de Pagos ── */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+            <Receipt className="w-4 h-4 text-gray-500" /> Historial de Pagos y Recibos
+          </h2>
+        </div>
+
+        {loadingPagos ? (
+          <div className="space-y-3">
+            {[1, 2].map((i) => (
+              <Skeleton key={i} className="h-16 w-full rounded-2xl" />
+            ))}
+          </div>
+        ) : misPagos.length === 0 ? (
+          <div className="bg-white border border-gray-200 rounded-3xl p-8 text-center text-gray-400 text-sm">
+            <Receipt className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+            Todavía no registrás pagos en tu cuenta.
+          </div>
+        ) : (
+          <div className="bg-white border border-gray-200 rounded-3xl overflow-hidden shadow-xs">
+            <div className="divide-y divide-gray-100">
+              {misPagos.map((p) => {
+                const esMP = p.metodo.toLowerCase().includes("mercado");
+                const esTarjeta = p.metodo.toLowerCase().includes("tarjeta");
+
+                return (
+                  <div key={p.id} className="p-4 sm:p-5 flex items-center justify-between hover:bg-gray-50/70 transition-colors">
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border ${
+                        esMP
+                          ? "bg-[#009ee3]/10 text-[#009ee3] border-[#009ee3]/20"
+                          : esTarjeta
+                          ? "bg-orange-50 text-orange-600 border-orange-100"
+                          : "bg-emerald-50 text-emerald-600 border-emerald-100"
+                      }`}>
+                        {esMP ? (
+                          <span className="font-black text-xs">MP</span>
+                        ) : esTarjeta ? (
+                          <CreditCard className="w-5 h-5" />
+                        ) : (
+                          <Building2 className="w-5 h-5" />
+                        )}
+                      </div>
+
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-sm text-gray-900 truncate">{p.planNombre}</p>
+                          <Badge variant="outline" className="text-[10px] font-semibold">
+                            {p.metodo}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-0.5 truncate">
+                          {p.fechaFormatted} {p.nota ? `— ${p.nota}` : ""}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0 pl-4">
+                      <p className="text-base font-black text-gray-900 font-mono">
+                        {p.montoFormatted}
+                      </p>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 uppercase tracking-wider">
+                        <CheckCircle2 className="w-3 h-3" /> Aprobado
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Modal Checkout Multimétodo ── */}
+      <CheckoutModal
+        open={checkoutOpen}
+        onOpenChange={setCheckoutOpen}
+        plan={planParaCheckout}
+        onPaymentSuccess={handlePaymentSuccess}
+      />
 
       {/* ── Modal baja propia cliente ── */}
       <Dialog open={bajaOpen} onOpenChange={setBajaOpen}>
-        <DialogContent>
+        <DialogContent className="rounded-2xl border-gray-200">
           <DialogHeader>
             <DialogTitle className="text-red-600">
               Cancelar mi membresía
@@ -314,8 +497,8 @@ export default function Planes() {
               />
             </div>
 
-            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-800 dark:text-red-300">
-              Al confirmar, tu membresía se cancelará de inmediato y no se registrarán cuotas automáticas posteriores.
+            <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-800">
+              Al confirmar, tu membresía se cancelará de inmediato y no se generarán cuotas posteriores.
             </div>
           </div>
 
@@ -325,6 +508,7 @@ export default function Planes() {
               variant="outline"
               onClick={() => setBajaOpen(false)}
               disabled={cancelando}
+              className="rounded-xl"
             >
               Mantener membresía
             </Button>
@@ -333,6 +517,7 @@ export default function Planes() {
               variant="destructive"
               onClick={handleConfirmarBajaMiMembresia}
               disabled={cancelando}
+              className="rounded-xl"
             >
               {cancelando ? "Cancelando..." : "Confirmar cancelación"}
             </Button>

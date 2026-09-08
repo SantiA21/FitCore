@@ -60,6 +60,7 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<MembresiaService>();
 builder.Services.AddScoped<PagoService>();
 builder.Services.AddScoped<TokenService>();
+builder.Services.AddHttpClient<MercadoPagoService>();
 
 // CORS
 builder.Services.AddCors(options =>

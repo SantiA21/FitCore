@@ -1,0 +1,655 @@
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/ui/use-toast";
+import { apiFetch } from "@/lib/api";
+import {
+  CreditCard,
+  Building2,
+  Copy,
+  Check,
+  ExternalLink,
+  ShieldCheck,
+  Sparkles,
+  Lock,
+} from "lucide-react";
+
+export type PlanParaCheckout = {
+  id: number;
+  nombre: string;
+  precio: number;
+  duracionEnDias: number;
+};
+
+interface CheckoutModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  plan: PlanParaCheckout | null;
+  onPaymentSuccess: () => void;
+}
+
+type MetodoPagoTab = "mercadopago" | "tarjeta" | "transferencia";
+
+export default function CheckoutModal({
+  open,
+  onOpenChange,
+  plan,
+  onPaymentSuccess,
+}: CheckoutModalProps) {
+  const { toast } = useToast();
+  const [tab, setTab] = useState<MetodoPagoTab>("mercadopago");
+  const [loading, setLoading] = useState(false);
+
+  // Estado formulario tarjeta
+  const [tarjeta, setTarjeta] = useState({
+    numero: "",
+    titular: "",
+    vencimiento: "",
+    cvv: "",
+    dni: "",
+  });
+
+  // Estado formulario transferencia
+  const [transferencia, setTransferencia] = useState({
+    comprobante: "",
+    observaciones: "",
+  });
+
+  // Estado copia clipboard
+  const [copiadoAlias, setCopiadoAlias] = useState(false);
+  const [copiadoCbu, setCopiadoCbu] = useState(false);
+
+  if (!plan) return null;
+
+  const precioFormatted = `$${plan.precio.toLocaleString("es-AR")}`;
+
+  // Formateo de número de tarjeta con espacios
+  const handleNumeroTarjetaChange = (val: string) => {
+    const raw = val.replace(/\D/g, "").slice(0, 16);
+    const parts = raw.match(/[\s\S]{1,4}/g) || [];
+    setTarjeta((p) => ({ ...p, numero: parts.join(" ") }));
+  };
+
+  // Formateo de vencimiento MM/AA
+  const handleVencimientoChange = (val: string) => {
+    const raw = val.replace(/\D/g, "").slice(0, 4);
+    if (raw.length >= 3) {
+      setTarjeta((p) => ({ ...p, vencimiento: `${raw.slice(0, 2)}/${raw.slice(2)}` }));
+    } else {
+      setTarjeta((p) => ({ ...p, vencimiento: raw }));
+    }
+  };
+
+  const copiarTexto = async (texto: string, tipo: "alias" | "cbu") => {
+    try {
+      await navigator.clipboard.writeText(texto);
+      if (tipo === "alias") {
+        setCopiadoAlias(true);
+        setTimeout(() => setCopiadoAlias(false), 2000);
+      } else {
+        setCopiadoCbu(true);
+        setTimeout(() => setCopiadoCbu(false), 2000);
+      }
+      toast({
+        title: "Copiado al portapapeles",
+        description: texto,
+      });
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Error al copiar",
+        description: "Copia el dato manualmente.",
+      });
+    }
+  };
+
+  // 1. Manejo de Mercado Pago
+  const handlePagarMercadoPago = async () => {
+    setLoading(true);
+    try {
+      const res = await apiFetch("/api/pagos-cliente/iniciar-mercadopago", {
+        method: "POST",
+        body: JSON.stringify({
+          planId: plan.id,
+          backUrlSuccess: `${window.location.origin}/dashboard-cliente?mp_status=approved&plan_id=${plan.id}`,
+          backUrlFailure: `${window.location.origin}/dashboard-cliente?mp_status=failure`,
+          backUrlPending: `${window.location.origin}/dashboard-cliente?mp_status=pending`,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.mensaje ?? "No se pudo conectar con Mercado Pago");
+      }
+
+      const pref = await res.json();
+
+      if (pref.isSimulated) {
+        // Modo simulación local: confirmamos directamente el pago
+        const confirmRes = await apiFetch("/api/pagos-cliente/confirmar-mercadopago", {
+          method: "POST",
+          body: JSON.stringify({
+            planId: plan.id,
+            paymentId: `MP-SIM-${Date.now()}`,
+            status: "approved",
+          }),
+        });
+
+        if (!confirmRes.ok) throw new Error("Error al registrar el pago de prueba");
+
+        toast({
+          variant: "success",
+          title: "¡Pago aprobado!",
+          description: `Se activó tu membresía en el plan ${plan.nombre}.`,
+        });
+
+        onOpenChange(false);
+        onPaymentSuccess();
+      } else {
+        // Redirigir a la URL real de Mercado Pago (Sandbox o Producción)
+        const targetUrl = pref.sandboxInitPoint || pref.initPoint;
+        if (targetUrl) {
+          window.location.href = targetUrl;
+        } else {
+          throw new Error("No se obtuvo la URL de pago de Mercado Pago");
+        }
+      }
+    } catch (err: unknown) {
+      toast({
+        variant: "destructive",
+        title: "Error con Mercado Pago",
+        description: err instanceof Error ? err.message : "Intentá nuevamente más tarde.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 2. Manejo de Tarjeta de Crédito / Débito
+  const handlePagarTarjeta = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanNum = tarjeta.numero.replace(/\s/g, "");
+    if (cleanNum.length < 15) {
+      toast({ variant: "destructive", title: "Número de tarjeta inválido", description: "Verificá los 16 dígitos." });
+      return;
+    }
+    if (!tarjeta.titular.trim()) {
+      toast({ variant: "destructive", title: "Falta el titular", description: "Ingresá el nombre que figura en la tarjeta." });
+      return;
+    }
+    if (!tarjeta.vencimiento || tarjeta.vencimiento.length < 5) {
+      toast({ variant: "destructive", title: "Vencimiento inválido", description: "Formato esperado MM/AA." });
+      return;
+    }
+    if (!tarjeta.cvv || tarjeta.cvv.length < 3) {
+      toast({ variant: "destructive", title: "CVV inválido", description: "Ingresá los 3 dígitos de seguridad." });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await apiFetch("/api/pagos-cliente/confirmar-tarjeta", {
+        method: "POST",
+        body: JSON.stringify({
+          planId: plan.id,
+          numeroTarjeta: cleanNum,
+          titular: tarjeta.titular.trim(),
+          vencimiento: tarjeta.vencimiento,
+          cvv: tarjeta.cvv,
+          dni: tarjeta.dni.trim(),
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.mensaje ?? "No se pudo procesar el pago con tarjeta.");
+      }
+
+      toast({
+        variant: "success",
+        title: "¡Pago con tarjeta aprobado!",
+        description: `Tu membresía en el plan ${plan.nombre} ya está activa.`,
+      });
+
+      onOpenChange(false);
+      onPaymentSuccess();
+    } catch (err: unknown) {
+      toast({
+        variant: "destructive",
+        title: "Error al pagar",
+        description: err instanceof Error ? err.message : "Revisá los datos ingresados.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 3. Manejo de Transferencia Bancaria
+  const handleConfirmarTransferencia = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!transferencia.comprobante.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Falta el comprobante",
+        description: "Ingresá el número de operación o referencia bancaria.",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await apiFetch("/api/pagos-cliente/confirmar-transferencia", {
+        method: "POST",
+        body: JSON.stringify({
+          planId: plan.id,
+          numeroComprobante: transferencia.comprobante.trim(),
+          observaciones: transferencia.observaciones.trim() || null,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.mensaje ?? "No se pudo registrar la transferencia.");
+      }
+
+      toast({
+        variant: "success",
+        title: "¡Transferencia registrada!",
+        description: `Comprobante ingresado correctamente. Tu plan ${plan.nombre} quedó activado.`,
+      });
+
+      onOpenChange(false);
+      onPaymentSuccess();
+    } catch (err: unknown) {
+      toast({
+        variant: "destructive",
+        title: "Error al registrar transferencia",
+        description: err instanceof Error ? err.message : "Intentá nuevamente.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto p-0 border-gray-200 bg-white dark:bg-zinc-950 shadow-2xl rounded-2xl">
+        {/* Header Resumen del Plan */}
+        <div className="bg-gradient-to-r from-zinc-900 to-zinc-800 text-white p-6 rounded-t-2xl relative overflow-hidden">
+          <div className="absolute right-0 top-0 translate-x-4 -translate-y-4 w-32 h-32 bg-orange-500/10 rounded-full blur-2xl" />
+          <DialogHeader className="text-left">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="px-2.5 py-0.5 rounded-full bg-orange-500/20 text-orange-400 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles className="w-3 h-3" /> Checkout Seguro
+              </span>
+            </div>
+            <DialogTitle className="text-2xl font-black tracking-tight text-white flex items-center justify-between">
+              <span>{plan.nombre}</span>
+              <span className="text-orange-400 font-mono text-2xl">{precioFormatted}</span>
+            </DialogTitle>
+            <DialogDescription className="text-zinc-300 text-xs mt-1">
+              Acceso completo al gimnasio durante {plan.duracionEnDias} días continuos.
+            </DialogDescription>
+          </DialogHeader>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Selector de Métodos */}
+          <div>
+            <Label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2.5 block">
+              Seleccioná cómo pagar
+            </Label>
+            <div className="grid grid-cols-3 gap-2.5">
+              {/* Opción Mercado Pago */}
+              <button
+                type="button"
+                onClick={() => setTab("mercadopago")}
+                className={`flex flex-col items-center justify-center p-3.5 rounded-xl border text-center transition-all cursor-pointer ${
+                  tab === "mercadopago"
+                    ? "border-[#009ee3] bg-[#009ee3]/10 ring-2 ring-[#009ee3]/30 text-zinc-900 font-semibold shadow-xs"
+                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-600"
+                }`}
+              >
+                <div className="w-8 h-8 rounded-lg bg-[#009ee3] text-white flex items-center justify-center mb-1.5 shadow-xs">
+                  <span className="font-black text-xs">MP</span>
+                </div>
+                <span className="text-xs font-bold">Mercado Pago</span>
+              </button>
+
+              {/* Opción Tarjeta */}
+              <button
+                type="button"
+                onClick={() => setTab("tarjeta")}
+                className={`flex flex-col items-center justify-center p-3.5 rounded-xl border text-center transition-all cursor-pointer ${
+                  tab === "tarjeta"
+                    ? "border-orange-500 bg-orange-500/10 ring-2 ring-orange-500/30 text-zinc-900 font-semibold shadow-xs"
+                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-600"
+                }`}
+              >
+                <div className="w-8 h-8 rounded-lg bg-orange-500 text-white flex items-center justify-center mb-1.5 shadow-xs">
+                  <CreditCard className="w-4 h-4" />
+                </div>
+                <span className="text-xs font-bold">Tarjeta</span>
+              </button>
+
+              {/* Opción Transferencia */}
+              <button
+                type="button"
+                onClick={() => setTab("transferencia")}
+                className={`flex flex-col items-center justify-center p-3.5 rounded-xl border text-center transition-all cursor-pointer ${
+                  tab === "transferencia"
+                    ? "border-emerald-500 bg-emerald-500/10 ring-2 ring-emerald-500/30 text-zinc-900 font-semibold shadow-xs"
+                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-600"
+                }`}
+              >
+                <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center mb-1.5 shadow-xs">
+                  <Building2 className="w-4 h-4" />
+                </div>
+                <span className="text-xs font-bold">Transferencia</span>
+              </button>
+            </div>
+          </div>
+
+          {/* ────────────────── CONTENIDO: MERCADO PAGO ────────────────── */}
+          {tab === "mercadopago" && (
+            <div className="space-y-4 pt-1 animate-in fade-in duration-200">
+              <div className="border border-[#009ee3]/20 bg-[#009ee3]/5 rounded-2xl p-5 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#009ee3] text-white flex items-center justify-center shrink-0 shadow-sm font-black text-sm">
+                    MP
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-gray-900">Mercado Pago Checkout</h4>
+                    <p className="text-xs text-gray-500">Pagá con dinero en cuenta, débito o crédito en cuotas.</p>
+                  </div>
+                </div>
+
+                <ul className="text-xs text-gray-600 space-y-1.5 pt-1 pl-1">
+                  <li className="flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Transacción 100% encriptada y protegida.</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Acreditación y activación inmediata de tu plan.</span>
+                  </li>
+                </ul>
+              </div>
+
+              <Button
+                onClick={handlePagarMercadoPago}
+                disabled={loading}
+                className="w-full h-12 rounded-xl bg-[#009ee3] hover:bg-[#0087c2] text-white text-sm font-bold shadow-md shadow-[#009ee3]/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
+              >
+                {loading ? (
+                  "Conectando con Mercado Pago..."
+                ) : (
+                  <>
+                    Pagar {precioFormatted} con Mercado Pago
+                    <ExternalLink className="w-4 h-4" />
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+
+          {/* ────────────────── CONTENIDO: TARJETA ────────────────── */}
+          {tab === "tarjeta" && (
+            <form onSubmit={handlePagarTarjeta} className="space-y-4 pt-1 animate-in fade-in duration-200">
+              {/* Tarjeta Visual Previa */}
+              <div className="bg-gradient-to-tr from-zinc-900 via-zinc-800 to-zinc-950 text-white rounded-2xl p-5 shadow-lg border border-zinc-700 relative overflow-hidden space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-mono text-zinc-400">FITCORE PAY</span>
+                  <CreditCard className="w-6 h-6 text-orange-400" />
+                </div>
+                <div className="py-1">
+                  <span className="font-mono text-lg tracking-widest text-zinc-200">
+                    {tarjeta.numero || "•••• •••• •••• ••••"}
+                  </span>
+                </div>
+                <div className="flex justify-between items-end text-xs">
+                  <div>
+                    <span className="text-[10px] text-zinc-400 uppercase tracking-widest block">Titular</span>
+                    <span className="font-semibold uppercase tracking-wider">
+                      {tarjeta.titular || "NOMBRE Y APELLIDO"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-zinc-400 uppercase tracking-widest block">Vence</span>
+                    <span className="font-mono">{tarjeta.vencimiento || "MM/AA"}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="tarjeta-numero" className="text-xs font-semibold text-gray-700">
+                    Número de Tarjeta
+                  </Label>
+                  <Input
+                    id="tarjeta-numero"
+                    placeholder="1234 5678 9012 3456"
+                    value={tarjeta.numero}
+                    onChange={(e) => handleNumeroTarjetaChange(e.target.value)}
+                    disabled={loading}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="tarjeta-titular" className="text-xs font-semibold text-gray-700">
+                    Nombre del Titular (como figura en la tarjeta)
+                  </Label>
+                  <Input
+                    id="tarjeta-titular"
+                    placeholder="JUAN PEREZ"
+                    value={tarjeta.titular}
+                    onChange={(e) => setTarjeta((p) => ({ ...p, titular: e.target.value.toUpperCase() }))}
+                    disabled={loading}
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="tarjeta-venc" className="text-xs font-semibold text-gray-700">
+                      Vence
+                    </Label>
+                    <Input
+                      id="tarjeta-venc"
+                      placeholder="MM/AA"
+                      value={tarjeta.vencimiento}
+                      onChange={(e) => handleVencimientoChange(e.target.value)}
+                      disabled={loading}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="tarjeta-cvv" className="text-xs font-semibold text-gray-700">
+                      CVV
+                    </Label>
+                    <Input
+                      id="tarjeta-cvv"
+                      type="password"
+                      maxLength={4}
+                      placeholder="123"
+                      value={tarjeta.cvv}
+                      onChange={(e) => setTarjeta((p) => ({ ...p, cvv: e.target.value.replace(/\D/g, "") }))}
+                      disabled={loading}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="tarjeta-dni" className="text-xs font-semibold text-gray-700">
+                      DNI Titular
+                    </Label>
+                    <Input
+                      id="tarjeta-dni"
+                      placeholder="38123456"
+                      value={tarjeta.dni}
+                      onChange={(e) => setTarjeta((p) => ({ ...p, dni: e.target.value.replace(/\D/g, "") }))}
+                      disabled={loading}
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full h-12 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold shadow-md shadow-orange-600/20 flex items-center justify-center gap-2 cursor-pointer transition-all mt-2"
+              >
+                {loading ? (
+                  "Procesando pago..."
+                ) : (
+                  <>
+                    <Lock className="w-4 h-4" />
+                    Pagar {precioFormatted} con Tarjeta
+                  </>
+                )}
+              </Button>
+            </form>
+          )}
+
+          {/* ────────────────── CONTENIDO: TRANSFERENCIA ────────────────── */}
+          {tab === "transferencia" && (
+            <form onSubmit={handleConfirmarTransferencia} className="space-y-4 pt-1 animate-in fade-in duration-200">
+              {/* Tarjeta de Datos Bancarios */}
+              <div className="border border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-2xl p-4 space-y-3">
+                <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-bold text-xs uppercase tracking-wider">
+                  <Building2 className="w-4 h-4 text-emerald-600" />
+                  <span>Datos de la Cuenta del Gimnasio</span>
+                </div>
+
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between items-center bg-white dark:bg-zinc-900 p-2.5 rounded-xl border border-gray-200 dark:border-zinc-800">
+                    <div>
+                      <span className="text-[10px] text-gray-400 block uppercase font-bold">Banco & Titular</span>
+                      <span className="font-semibold text-gray-800 dark:text-zinc-200">Banco Galicia — FitCore Gym S.A.</span>
+                    </div>
+                    <span className="text-[10px] text-gray-500 font-mono">CUIT: 30-71234567-8</span>
+                  </div>
+
+                  {/* Alias con botón de copia */}
+                  <div className="flex justify-between items-center bg-white dark:bg-zinc-900 p-2.5 rounded-xl border border-gray-200 dark:border-zinc-800">
+                    <div>
+                      <span className="text-[10px] text-gray-400 block uppercase font-bold">Alias</span>
+                      <span className="font-mono font-bold text-gray-900 dark:text-zinc-100 text-sm">FITCORE.GYM</span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copiarTexto("FITCORE.GYM", "alias")}
+                      className="h-8 gap-1.5 text-xs rounded-lg cursor-pointer"
+                    >
+                      {copiadoAlias ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-600" /> Copiado
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" /> Copiar Alias
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  {/* CBU con botón de copia */}
+                  <div className="flex justify-between items-center bg-white dark:bg-zinc-900 p-2.5 rounded-xl border border-gray-200 dark:border-zinc-800">
+                    <div>
+                      <span className="text-[10px] text-gray-400 block uppercase font-bold">CBU / CVU</span>
+                      <span className="font-mono text-xs text-gray-700 dark:text-zinc-300">0070123420000012345678</span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copiarTexto("0070123420000012345678", "cbu")}
+                      className="h-8 gap-1.5 text-xs rounded-lg cursor-pointer"
+                    >
+                      {copiadoCbu ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-600" /> Copiado
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" /> Copiar CBU
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Formulario de Comprobante */}
+              <div className="space-y-3 pt-1">
+                <div className="space-y-1.5">
+                  <Label htmlFor="transf-comp" className="text-xs font-semibold text-gray-700">
+                    N° de Comprobante / Código de Operación <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="transf-comp"
+                    placeholder="Ej. OP-8492048 o últimos 6 dígitos del comprobante"
+                    value={transferencia.comprobante}
+                    onChange={(e) => setTransferencia((p) => ({ ...p, comprobante: e.target.value }))}
+                    disabled={loading}
+                    required
+                  />
+                  <p className="text-[11px] text-gray-400">
+                    Podés encontrar este código en el comprobante emitido por tu banco o billetera virtual.
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="transf-obs" className="text-xs font-semibold text-gray-700">
+                    Observación adicional <span className="text-gray-400 font-normal text-xs">(opcional)</span>
+                  </Label>
+                  <Input
+                    id="transf-obs"
+                    placeholder="Ej. Transferido desde cuenta a nombre de..."
+                    value={transferencia.observaciones}
+                    onChange={(e) => setTransferencia((p) => ({ ...p, observaciones: e.target.value }))}
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer transition-all mt-2"
+              >
+                {loading ? (
+                  "Verificando comprobante..."
+                ) : (
+                  <>
+                    <Check className="w-4 h-4" />
+                    Confirmar Transferencia de {precioFormatted}
+                  </>
+                )}
+              </Button>
+            </form>
+          )}
+
+          {/* Footer de Seguridad */}
+          <div className="pt-2 border-t border-gray-100 flex items-center justify-center gap-2 text-[11px] text-gray-400">
+            <Lock className="w-3.5 h-3.5 text-gray-400" />
+            <span>Tus pagos están protegidos bajo estándares bancarios y SSL.</span>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
