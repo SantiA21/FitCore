@@ -35,17 +35,22 @@ public class AuthController : ControllerBase
             Email = dto.Email,
             Nombre = dto.Nombre,
             Apellido = dto.Apellido,
-            Categoria = dto.Categoria,
+            Categoria = Categoria.Cliente,
+            Activo = true,
+            FechaAlta = DateTime.UtcNow
         };
 
         var resultado = await _userManager.CreateAsync(user, dto.Password);
         if (!resultado.Succeeded)
             return BadRequest(new { errores = resultado.Errors.Select(e => e.Description) });
 
+        await _userManager.AddToRoleAsync(user, "Cliente");
+
         var token = _tokenService.GenerarToken(user);
 
         return Ok(new AuthResponseDto
         {
+            Id = user.Id,
             Token = token,
             Email = user.Email!,
             Nombre = user.Nombre,
@@ -70,6 +75,7 @@ public class AuthController : ControllerBase
 
         return Ok(new AuthResponseDto
         {
+            Id = user.Id,
             Token = token,
             Email = user.Email!,
             Nombre = user.Nombre,

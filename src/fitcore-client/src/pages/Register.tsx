@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
+import { apiFetch } from "@/lib/api";
 export default function Register() {
   const [form, setForm] = useState({
     nombre: "",
@@ -26,10 +27,15 @@ export default function Register() {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:5192/api/auth/register", {
+      const res = await apiFetch("/api/auth/register", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, rol: "Admin" }),
+        body: JSON.stringify({
+          nombre: form.nombre,
+          apellido: form.apellido,
+          email: form.email,
+          password: form.password,
+          categoria: 2, // Categoria.Cliente
+        }),
       });
 
       if (!res.ok) {
