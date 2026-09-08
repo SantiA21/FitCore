@@ -14,8 +14,9 @@ import BentoCard from "./BentoCard";
 import { cn } from "@/lib/utils";
 
 type Cliente = {
-  id: number;
+  id: string | number;
   nombre: string;
+  apellido?: string;
   activo: boolean;
 };
 
@@ -48,18 +49,30 @@ export default function QuickRegisterBentoCard({
       const res = await apiFetch("/api/asistencias", {
         method: "POST",
         body: JSON.stringify({
-          clienteId: Number(formClienteId),
+          userId: String(formClienteId),
           fecha: fecha,
-          horaIngreso: new Date().toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' }) + ":00",
+          horaIngreso: new Date().toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
         }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message ?? "Error al registrar asistencia");
+      }
 
-      toast({ title: "Registrado" });
+      const clienteReg = clientes.find(c => String(c.id) === formClienteId);
+      toast({
+        variant: "success",
+        title: "Asistencia registrada",
+        description: clienteReg ? `Ingreso de ${clienteReg.nombre} ${clienteReg.apellido || ''} registrado.` : "Ingreso registrado."
+      });
       setFormClienteId("");
       onSuccess?.();
-    } catch {
-      toast({ variant: "destructive", title: "Error" });
+    } catch (err: unknown) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: err instanceof Error ? err.message : "No se pudo registrar la asistencia."
+      });
     } finally {
       setSaving(false);
     }
@@ -92,7 +105,10 @@ export default function QuickRegisterBentoCard({
             <SelectTrigger className="h-12 text-[12px] rounded-2xl border-gray-100 bg-white shadow-sm px-4">
               <SelectValue>
                 {formClienteId
-                  ? clientes.find(c => String(c.id) === formClienteId)?.nombre
+                  ? (() => {
+                      const c = clientes.find(x => String(x.id) === formClienteId);
+                      return c ? `${c.nombre} ${c.apellido || ''}`.trim() : "Buscar cliente...";
+                    })()
                   : <span className="text-gray-400">Buscar cliente...</span>
                 }
               </SelectValue>
@@ -106,7 +122,7 @@ export default function QuickRegisterBentoCard({
               {clientes.filter(c => c.activo).length > 0 ? (
                 clientes.filter(c => c.activo).map((c) => (
                   <SelectItem key={c.id} value={String(c.id)} className="text-[12px] py-3 px-4 cursor-pointer rounded-xl focus:bg-gray-50">
-                    {c.nombre}
+                    {c.nombre} {c.apellido || ''}
                   </SelectItem>
                 ))
               ) : (

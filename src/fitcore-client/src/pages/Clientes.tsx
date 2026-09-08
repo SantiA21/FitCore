@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Plus, Pencil, UserX, UserCheck, Trash2 } from "lucide-react";
+import { Search, Plus, Pencil, UserX, UserCheck, Trash2, CalendarX } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -99,6 +99,13 @@ export default function Clientes() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState<Cliente | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Modal dar de baja membresía
+  const [bajaModalOpen, setBajaModalOpen] = useState(false);
+  const [clienteBaja, setClienteBaja] = useState<Cliente | null>(null);
+  const [motivoBaja, setMotivoBaja] = useState("Económico / Presupuesto");
+  const [observacionBaja, setObservacionBaja] = useState("");
+  const [procesandoBaja, setProcesandoBaja] = useState(false);
 
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -268,6 +275,56 @@ export default function Clientes() {
     }
   };
 
+  const openBaja = (cliente: Cliente) => {
+    setClienteBaja(cliente);
+    setMotivoBaja("Económico / Presupuesto");
+    setObservacionBaja("");
+    setBajaModalOpen(true);
+  };
+
+  const handleConfirmarBaja = async () => {
+    if (!clienteBaja) return;
+    setProcesandoBaja(true);
+    try {
+      const res = await apiFetch(`/api/membresias/${clienteBaja.id}/cancelar`, {
+        method: "POST",
+        body: JSON.stringify({
+          motivo: motivoBaja,
+          observaciones: observacionBaja.trim() || null,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message ?? "Error al dar de baja la membresía");
+      }
+
+      setClientes((prev) =>
+        prev.map((c) =>
+          c.id === clienteBaja.id
+            ? { ...c, planId: null, planNombre: null, membresiaVence: null }
+            : c
+        )
+      );
+
+      toast({
+        variant: "success",
+        title: "Membresía dada de baja",
+        description: `Se canceló la membresía de ${clienteBaja.nombre} ${clienteBaja.apellido}.`,
+      });
+      setBajaModalOpen(false);
+      setClienteBaja(null);
+    } catch (err: unknown) {
+      toast({
+        variant: "destructive",
+        title: "Error al cancelar",
+        description: err instanceof Error ? err.message : "Intentá nuevamente.",
+      });
+    } finally {
+      setProcesandoBaja(false);
+    }
+  };
+
   return (
     <TooltipProvider>
       <div className="space-y-6">
@@ -377,6 +434,23 @@ export default function Clientes() {
                           </TooltipTrigger>
                           <TooltipContent>{c.activo ? "Desactivar" : "Reactivar"}</TooltipContent>
                         </Tooltip>
+
+                        {/* Dar de baja membresía */}
+                        {c.planNombre && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type="button" variant="ghost" size="icon"
+                                className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                                onClick={() => openBaja(c)}
+                                aria-label="Dar de baja membresía"
+                              >
+                                <CalendarX className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Dar de baja membresía</TooltipContent>
+                          </Tooltip>
+                        )}
 
                         {/* Eliminar permanentemente */}
                         <Tooltip>
@@ -528,6 +602,86 @@ export default function Clientes() {
                 disabled={deleteLoading}
               >
                 {deleteLoading ? "Eliminando..." : "Eliminar"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* ── Modal Dar de Baja Membresía ── */}
+        <Dialog open={bajaModalOpen} onOpenChange={setBajaModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-red-600">
+                <CalendarX className="h-5 w-5" />
+                Dar de baja membresía
+              </DialogTitle>
+              <DialogDescription>
+                {clienteBaja && (
+                  <span>
+                    Estás por cancelar la membresía activa de{" "}
+                    <strong>{clienteBaja.nombre} {clienteBaja.apellido}</strong> (Plan actual:{" "}
+                    <strong className="text-foreground">{clienteBaja.planNombre}</strong>).
+                  </span>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="mt-4 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="motivo-baja">Motivo de la baja</Label>
+                <Select
+                  value={motivoBaja}
+                  onValueChange={setMotivoBaja}
+                  disabled={procesandoBaja}
+                >
+                  <SelectTrigger id="motivo-baja">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Económico / Presupuesto">Económico / Presupuesto</SelectItem>
+                    <SelectItem value="Falta de tiempo / Horarios">Falta de tiempo / Horarios</SelectItem>
+                    <SelectItem value="Lesión o motivos de salud">Lesión o motivos de salud</SelectItem>
+                    <SelectItem value="Mudanza o distancia al gimnasio">Mudanza o distancia al gimnasio</SelectItem>
+                    <SelectItem value="Disconformidad con el servicio">Disconformidad con el servicio</SelectItem>
+                    <SelectItem value="Otro motivo">Otro motivo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="obs-baja">
+                  Observaciones adicionales <span className="text-gray-400 font-normal text-xs">(opcional)</span>
+                </Label>
+                <Input
+                  id="obs-baja"
+                  placeholder="Detalles sobre la baja, comentarios del cliente..."
+                  value={observacionBaja}
+                  onChange={(e) => setObservacionBaja(e.target.value)}
+                  disabled={procesandoBaja}
+                />
+              </div>
+
+              <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-amber-800 dark:text-amber-300">
+                La membresía quedará cancelada a partir de hoy y el cliente figurará sin plan activo. El historial de pagos anteriores se preserva intacto.
+              </div>
+            </div>
+
+            <DialogFooter className="mt-6">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setBajaModalOpen(false)}
+                disabled={procesandoBaja}
+              >
+                Volver
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleConfirmarBaja}
+                disabled={procesandoBaja}
+              >
+                {procesandoBaja ? "Procesando..." : "Confirmar baja"}
               </Button>
             </DialogFooter>
           </DialogContent>

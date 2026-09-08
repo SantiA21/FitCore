@@ -1,11 +1,13 @@
-﻿namespace FitCore.Application.DTOs;
+namespace FitCore.Application.DTOs;
 
 public class EstadoCuentaDto
 {
     public string UserId { get; set; } = string.Empty;
     public string Nombre { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+    public int? MembresiaId { get; set; }
     public string? PlanNombre { get; set; }
+    public decimal? PlanPrecio { get; set; }
     public DateTime? MembresiaVence { get; set; }
 
     // Estado general del cliente

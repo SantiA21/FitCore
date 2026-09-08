@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 interface BentoCardProps {
@@ -17,7 +17,7 @@ export default function BentoCard({ children, className, delay = 0 }: BentoCardP
       )}
       style={{ animationDelay: `${delay}ms` }}
     >
-      <div className="relative z-10 h-full">
+      <div className="relative z-10 h-full w-full">
         {children}
       </div>
     </div>

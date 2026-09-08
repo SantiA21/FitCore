@@ -89,20 +89,33 @@ public class MembresiasController : ControllerBase
         return Ok(result);
     }
 
-    // DELETE api/membresias/{userId}/activa  →  inactiva la membresía activa del usuario
+    // POST api/membresias/{userId}/cancelar  →  cancela la membresía activa con motivo (Admin)
+    [HttpPost("{userId}/cancelar")]
+    public async Task<IActionResult> Cancelar(string userId, [FromBody] CancelarMembresiaRequest? request)
+    {
+        var ok = await _service.Cancelar(userId, request?.Motivo, request?.Observaciones);
+        if (!ok) return NotFound(new { message = "No se encontró una membresía activa para este usuario." });
+        return Ok(new { message = "Membresía cancelada correctamente." });
+    }
+
+    // POST api/membresias/cancelar-mi-membresia  →  el cliente cancela su propia membresía activa
+    [HttpPost("cancelar-mi-membresia")]
+    public async Task<IActionResult> CancelarMiMembresia([FromBody] CancelarMembresiaRequest? request)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId is null) return Unauthorized();
+
+        var ok = await _service.Cancelar(userId, request?.Motivo, request?.Observaciones);
+        if (!ok) return NotFound(new { message = "No tenés una membresía activa para cancelar." });
+        return Ok(new { message = "Tu membresía fue cancelada correctamente." });
+    }
+
+    // DELETE api/membresias/{userId}/activa  →  inactiva la membresía activa del usuario (compatibilidad)
     [HttpDelete("{userId}/activa")]
     public async Task<IActionResult> Inactivar(string userId)
     {
-        var hoy = DateTime.UtcNow;
-        var membresia = await _context.Membresias
-            .Where(m => m.UserId == userId && m.Activa && m.FechaFin >= hoy)
-            .FirstOrDefaultAsync();
-
-        if (membresia is null) return NotFound();
-
-        membresia.Activa = false;
-        membresia.FechaFin = hoy;
-        await _context.SaveChangesAsync();
+        var ok = await _service.Cancelar(userId, "Baja por edición de usuario", null);
+        if (!ok) return NotFound();
 
         return NoContent();
     }
@@ -119,4 +132,10 @@ public class CrearMembresiaRequest
 {
     public string UserId { get; set; } = string.Empty;
     public int PlanId { get; set; }
+}
+
+public class CancelarMembresiaRequest
+{
+    public string? Motivo { get; set; }
+    public string? Observaciones { get; set; }
 }

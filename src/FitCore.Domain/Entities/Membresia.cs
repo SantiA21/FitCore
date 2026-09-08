@@ -14,4 +14,8 @@ public class Membresia
     public DateTime FechaFin { get; set; }
 
     public bool Activa { get; set; } = true;
+
+    public DateTime? FechaBaja { get; set; }
+    public string? MotivoBaja { get; set; }
+    public string? ObservacionBaja { get; set; }
 }

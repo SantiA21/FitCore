@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { Plus, Check, X } from "lucide-react";
+import { Plus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,11 +29,19 @@ type PeriodoEstado = {
   fechaPago: string | null;
 };
 
+type Plan = {
+  id: number;
+  nombre: string;
+  precio: number;
+};
+
 type EstadoCuenta = {
   userId: string;
   nombre: string;
   email: string;
+  membresiaId?: number | null;
   planNombre: string | null;
+  planPrecio?: number | null;
   membresiaVence: string | null;
   estadoGeneral: "AlDia" | "ConDeuda" | "PendienteMesActual";
   periodos: PeriodoEstado[];
@@ -59,6 +67,7 @@ function TableRowSkeleton({ cols }: { cols: number }) {
 
 export default function EstadoCuenta() {
   const [clientes, setClientes] = useState<EstadoCuenta[]>([]);
+  const [planes, setPlanes] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtroEstado, setFiltroEstado] = useState("Todos");
   const [busqueda, setBusqueda] = useState("");
@@ -74,13 +83,24 @@ export default function EstadoCuenta() {
     nota: "",
   });
 
+  // Descuento
+  const [aplicaDescuento, setAplicaDescuento] = useState(false);
+  const [porcentajeDescuento, setPorcentajeDescuento] = useState("");
+  const [importeFinal, setImporteFinal] = useState("");
+
   const { toast } = useToast();
 
   const cargar = async () => {
     setLoading(true);
     try {
-      const data = await apiFetch("/api/pagos/estado-cuenta").then((r) => r.json());
+      const [data, planesData] = await Promise.all([
+        apiFetch("/api/pagos/estado-cuenta").then((r) => r.json()),
+        apiFetch("/api/planes").then((r) => r.json()).catch(() => [])
+      ]);
       setClientes(data);
+      if (Array.isArray(planesData)) {
+        setPlanes(planesData);
+      }
     } finally {
       setLoading(false);
     }
@@ -105,27 +125,165 @@ export default function EstadoCuenta() {
   // Obtener los headers de períodos del primer cliente
   const periodoHeaders = clientes[0]?.periodos.map((p) => p.nombreMes) ?? [];
 
+  // ── Validaciones de entrada ──────────────────────────────
+  const preventInvalidNumberKeys = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (["-", "+", "e", "E"].includes(e.key)) {
+      e.preventDefault();
+    }
+  };
+
+  const handleMontoChange = (val: string) => {
+    const sanitized = val.replace(/[^0-9.]/g, "");
+    setPagoForm((p) => ({ ...p, monto: sanitized }));
+
+    const base = parseFloat(sanitized);
+    if (isNaN(base) || base <= 0) {
+      setImporteFinal("");
+      return;
+    }
+
+    if (aplicaDescuento && porcentajeDescuento !== "") {
+      const pct = parseFloat(porcentajeDescuento) || 0;
+      const final = Math.max(0, Math.round(base * (1 - pct / 100)));
+      setImporteFinal(String(final));
+    } else {
+      setImporteFinal(sanitized);
+    }
+  };
+
+  const handleToggleDescuento = (checked: boolean) => {
+    setAplicaDescuento(checked);
+    if (checked) {
+      const base = parseFloat(pagoForm.monto) || 0;
+      if (porcentajeDescuento !== "") {
+        const pct = parseFloat(porcentajeDescuento) || 0;
+        const final = Math.max(0, Math.round(base * (1 - pct / 100)));
+        setImporteFinal(String(final));
+      } else {
+        setImporteFinal(pagoForm.monto);
+      }
+    } else {
+      setPorcentajeDescuento("");
+      setImporteFinal(pagoForm.monto);
+    }
+  };
+
+  const handlePorcentajeChange = (val: string) => {
+    const sanitized = val.replace(/[^0-9.]/g, "");
+    if (sanitized === "") {
+      setPorcentajeDescuento("");
+      setImporteFinal(pagoForm.monto);
+      return;
+    }
+
+    let num = parseFloat(sanitized);
+    if (isNaN(num)) return;
+    if (num > 100) num = 100;
+    if (num < 0) num = 0;
+
+    setPorcentajeDescuento(String(num));
+    const base = parseFloat(pagoForm.monto) || 0;
+    const final = Math.max(0, Math.round(base * (1 - num / 100)));
+    setImporteFinal(String(final));
+  };
+
+  const handleImporteFinalChange = (val: string) => {
+    const sanitized = val.replace(/[^0-9.]/g, "");
+    if (sanitized === "") {
+      setImporteFinal("");
+      return;
+    }
+
+    let finalVal = parseFloat(sanitized);
+    if (isNaN(finalVal)) return;
+    if (finalVal < 0) finalVal = 0;
+
+    const base = parseFloat(pagoForm.monto) || 0;
+    if (base > 0) {
+      if (finalVal > base) {
+        finalVal = base;
+      }
+      const pct = Math.max(0, Math.min(100, Math.round(((base - finalVal) / base) * 100)));
+      setPorcentajeDescuento(String(pct));
+    }
+    setImporteFinal(String(finalVal));
+  };
+
   const abrirPago = (cliente: EstadoCuenta, periodo: PeriodoEstado) => {
     setClienteSeleccionado(cliente);
     setPeriodoSeleccionado(periodo);
-    setPagoForm({ monto: "", metodo: "Efectivo", nota: "" });
+
+    // Autocompletar el monto con el costo del plan asociado
+    const precio = cliente.planPrecio ?? planes.find((pl) => pl.nombre === cliente.planNombre)?.precio;
+    const montoInicial = precio !== undefined && precio !== null ? String(precio) : "";
+
+    setPagoForm({
+      monto: montoInicial,
+      metodo: "Efectivo",
+      nota: ""
+    });
+    setAplicaDescuento(false);
+    setPorcentajeDescuento("");
+    setImporteFinal(montoInicial);
     setModalOpen(true);
   };
 
   const handleRegistrarPago = async () => {
-    if (!clienteSeleccionado || !periodoSeleccionado || !pagoForm.monto) {
-      toast({ variant: "destructive", title: "Ingresá un monto" });
+    if (!clienteSeleccionado || !periodoSeleccionado) return;
+
+    const baseMonto = parseFloat(pagoForm.monto);
+    if (isNaN(baseMonto) || baseMonto <= 0) {
+      toast({
+        variant: "destructive",
+        title: "Monto inválido",
+        description: "El monto base debe ser un número mayor a cero."
+      });
       return;
     }
+
+    let montoCobro = baseMonto;
+
+    if (aplicaDescuento) {
+      const final = parseFloat(importeFinal);
+      if (isNaN(final) || final <= 0) {
+        toast({
+          variant: "destructive",
+          title: "Importe final inválido",
+          description: "El importe final con descuento debe ser mayor a cero."
+        });
+        return;
+      }
+      if (final > baseMonto) {
+        toast({
+          variant: "destructive",
+          title: "Descuento inválido",
+          description: "El importe final no puede ser mayor al monto original."
+        });
+        return;
+      }
+      montoCobro = final;
+    }
+
     setSaving(true);
     try {
+      const baseNota = `Cuota ${periodoSeleccionado.nombreMes}${clienteSeleccionado.planNombre ? ` - Plan ${clienteSeleccionado.planNombre}` : ""}`;
+      const partesNota: string[] = [baseNota];
+      if (pagoForm.nota.trim()) {
+        partesNota.push(pagoForm.nota.trim());
+      }
+      if (aplicaDescuento && porcentajeDescuento) {
+        partesNota.push(`Desc. ${porcentajeDescuento}% (Base: $${baseMonto.toLocaleString("es-AR")} → Final: $${montoCobro.toLocaleString("es-AR")})`);
+      }
+      const notaEnvio = partesNota.join(" | ");
+
       const res = await apiFetch("/api/pagos", {
         method: "POST",
         body: JSON.stringify({
           userId: clienteSeleccionado.userId,
-          monto: parseFloat(pagoForm.monto),
+          membresiaId: clienteSeleccionado.membresiaId ?? null,
+          monto: montoCobro,
           metodo: pagoForm.metodo,
-          nota: pagoForm.nota || null,
+          nota: notaEnvio,
           concepto: "Cuota mensual",
           periodoMes: periodoSeleccionado.mes,
           periodoAnio: periodoSeleccionado.anio,
@@ -140,7 +298,7 @@ export default function EstadoCuenta() {
       toast({
         variant: "success",
         title: "Pago registrado",
-        description: `Pago de ${clienteSeleccionado.nombre} para ${periodoSeleccionado.nombreMes} registrado.`,
+        description: `Pago de ${clienteSeleccionado.nombre} por $${montoCobro.toLocaleString("es-AR")} registrado para ${periodoSeleccionado.nombreMes}.`,
       });
       setModalOpen(false);
       cargar();
@@ -275,17 +433,37 @@ export default function EstadoCuenta() {
           </DialogHeader>
 
           <div className="mt-4 space-y-4">
+            {clienteSeleccionado?.planNombre && (
+              <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/60 border border-border text-xs">
+                <span className="text-muted-foreground">Plan asociado:</span>
+                <span className="font-semibold text-foreground">
+                  {clienteSeleccionado.planNombre}
+                  {(clienteSeleccionado.planPrecio || planes.find((pl) => pl.nombre === clienteSeleccionado.planNombre)?.precio) && (
+                    <span className="ml-1 text-emerald-600 font-bold">
+                      (${Number(clienteSeleccionado.planPrecio ?? planes.find((pl) => pl.nombre === clienteSeleccionado.planNombre)?.precio).toLocaleString("es-AR")})
+                    </span>
+                  )}
+                </span>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Monto</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  placeholder="0"
-                  value={pagoForm.monto}
-                  onChange={(e) => setPagoForm((p) => ({ ...p, monto: e.target.value }))}
-                  disabled={saving}
-                />
+                <Label htmlFor="montoBase">Monto original</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">$</span>
+                  <Input
+                    id="montoBase"
+                    type="number"
+                    min="0"
+                    step="any"
+                    placeholder="0"
+                    className="pl-7"
+                    value={pagoForm.monto}
+                    onChange={(e) => handleMontoChange(e.target.value)}
+                    onKeyDown={preventInvalidNumberKeys}
+                    disabled={saving}
+                  />
+                </div>
               </div>
               <div className="space-y-2">
                 <Label>Método</Label>
@@ -300,14 +478,106 @@ export default function EstadoCuenta() {
                 </Select>
               </div>
             </div>
+
+            {/* Checkbox Aplica Descuento */}
+            <div className="pt-2 border-t border-border">
+              <label
+                htmlFor="checkDescuento"
+                className="flex items-center gap-2.5 py-1 text-sm font-medium cursor-pointer select-none"
+              >
+                <input
+                  id="checkDescuento"
+                  type="checkbox"
+                  checked={aplicaDescuento}
+                  onChange={(e) => handleToggleDescuento(e.target.checked)}
+                  disabled={saving}
+                  className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black accent-black cursor-pointer"
+                />
+                <span>Aplica descuento</span>
+              </label>
+
+              {aplicaDescuento && (
+                <div className="mt-3 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="pctDescuento" className="text-xs font-semibold text-amber-900 dark:text-amber-200">
+                        % Descuento
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="pctDescuento"
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="1"
+                          placeholder="0"
+                          className="bg-background pr-7 text-sm"
+                          value={porcentajeDescuento}
+                          onChange={(e) => handlePorcentajeChange(e.target.value)}
+                          onKeyDown={preventInvalidNumberKeys}
+                          disabled={saving}
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">%</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="impFinal" className="text-xs font-semibold text-emerald-900 dark:text-emerald-200">
+                        Importe final
+                      </Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-emerald-600">$</span>
+                        <Input
+                          id="impFinal"
+                          type="number"
+                          min="0"
+                          step="any"
+                          placeholder="0"
+                          className="bg-background pl-7 text-sm font-bold text-emerald-600"
+                          value={importeFinal}
+                          onChange={(e) => handleImporteFinalChange(e.target.value)}
+                          onKeyDown={preventInvalidNumberKeys}
+                          disabled={saving}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {pagoForm.monto && importeFinal && (
+                    <div className="flex justify-between items-center text-[11px] text-amber-900 dark:text-amber-300 font-medium pt-1.5 border-t border-amber-500/20">
+                      <span>Ahorro del cliente:</span>
+                      <span className="font-bold text-emerald-700 dark:text-emerald-400">
+                        ${Math.max(0, (parseFloat(pagoForm.monto) || 0) - (parseFloat(importeFinal) || 0)).toLocaleString("es-AR")}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             <div className="space-y-2">
-              <Label>Nota <span className="text-gray-400 font-normal text-sm">(opcional)</span></Label>
+              <Label htmlFor="inputNota">Nota personalizada <span className="text-gray-400 font-normal text-xs">(opcional)</span></Label>
               <Input
-                placeholder="Ej: Pago en efectivo en recepción..."
+                id="inputNota"
+                placeholder="Ej: Pago en efectivo en recepción, abonó mitad y mitad..."
                 value={pagoForm.nota}
                 onChange={(e) => setPagoForm((p) => ({ ...p, nota: e.target.value }))}
                 disabled={saving}
               />
+              <div className="p-2.5 rounded-lg bg-muted/50 border border-border text-xs text-muted-foreground leading-relaxed">
+                <span className="font-semibold text-foreground">Nota que se registrará: </span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                  Cuota {periodoSeleccionado?.nombreMes}{clienteSeleccionado?.planNombre ? ` - Plan ${clienteSeleccionado.planNombre}` : ""}
+                </span>
+                {pagoForm.nota.trim() && (
+                  <span className="text-foreground font-medium"> | {pagoForm.nota.trim()}</span>
+                )}
+                {aplicaDescuento && porcentajeDescuento && (
+                  <span className="text-amber-600 dark:text-amber-400 font-medium">
+                    {" "}| Desc. {porcentajeDescuento}% (Base: ${parseFloat(pagoForm.monto || "0").toLocaleString("es-AR")} → Final: ${parseFloat(importeFinal || "0").toLocaleString("es-AR")})
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 

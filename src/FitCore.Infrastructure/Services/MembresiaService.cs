@@ -145,4 +145,25 @@ public class MembresiaService
             })
             .ToListAsync();
     }
+
+    public async Task<bool> Cancelar(string userId, string? motivo, string? observaciones)
+    {
+        var hoy = DateTime.UtcNow;
+        var membresia = await _context.Membresias
+            .Where(m => m.UserId == userId && m.Activa && m.FechaFin >= hoy)
+            .OrderByDescending(m => m.FechaFin)
+            .FirstOrDefaultAsync();
+
+        if (membresia == null)
+            return false;
+
+        membresia.Activa = false;
+        membresia.FechaFin = hoy;
+        membresia.FechaBaja = hoy;
+        membresia.MotivoBaja = string.IsNullOrWhiteSpace(motivo) ? "Sin especificar" : motivo.Trim();
+        membresia.ObservacionBaja = string.IsNullOrWhiteSpace(observaciones) ? null : observaciones.Trim();
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
 }

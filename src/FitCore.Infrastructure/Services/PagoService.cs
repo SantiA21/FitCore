@@ -48,42 +48,72 @@ public class PagoService
         if (yaExiste)
             throw new Exception($"Ya existe un pago registrado para {NombreMes(periodoMes, periodoAnio)}.");
 
-        // Verificar que tenga membresía activa
-        var tieneMembresia = await _context.Membresias.AnyAsync(m =>
-            m.UserId == request.UserId &&
-            m.Activa &&
-            m.FechaFin >= hoy);
+        // Obtener la membresía del cliente (por id si viene provisto, o la activa/última)
+        var membresia = request.MembresiaId.HasValue
+            ? await _context.Membresias
+                .Include(m => m.Plan)
+                .FirstOrDefaultAsync(m => m.Id == request.MembresiaId.Value && m.UserId == request.UserId)
+            : await _context.Membresias
+                .Include(m => m.Plan)
+                .Where(m => m.UserId == request.UserId && m.Activa && m.FechaFin >= hoy)
+                .OrderByDescending(m => m.FechaFin)
+                .FirstOrDefaultAsync();
 
-        if (!tieneMembresia)
-            throw new Exception("El cliente no tiene una membresía activa.");
-
-        decimal montoFinal;
-        if (request.Monto.HasValue && request.Monto > 0)
+        if (membresia == null)
         {
-            montoFinal = request.Monto.Value;
+            membresia = await _context.Membresias
+                .Include(m => m.Plan)
+                .Where(m => m.UserId == request.UserId)
+                .OrderByDescending(m => m.FechaFin)
+                .FirstOrDefaultAsync();
+        }
+
+        if (membresia == null)
+            throw new Exception("El cliente no tiene una membresía activa ni registrada.");
+
+        if (request.Monto.HasValue && request.Monto.Value <= 0)
+            throw new Exception("El monto a pagar debe ser mayor a cero.");
+
+        decimal montoFinal = (request.Monto.HasValue && request.Monto.Value > 0)
+            ? request.Monto.Value
+            : membresia.Plan.Precio;
+
+        // Componer nota predeterminada con mes y plan
+        string nombreMes = NombreMes(periodoMes, periodoAnio);
+        if (!string.IsNullOrEmpty(nombreMes))
+            nombreMes = char.ToUpper(nombreMes[0]) + nombreMes[1..];
+
+        string planTexto = !string.IsNullOrWhiteSpace(membresia.Plan?.Nombre)
+            ? $" - Plan {membresia.Plan.Nombre}"
+            : "";
+        string notaBase = $"Cuota {nombreMes}{planTexto}";
+
+        string notaFinal;
+        if (!string.IsNullOrWhiteSpace(request.Nota))
+        {
+            string notaLimpia = request.Nota.Trim();
+            if (notaLimpia.StartsWith(notaBase, StringComparison.OrdinalIgnoreCase) ||
+                notaLimpia.Contains($"Cuota {nombreMes}", StringComparison.OrdinalIgnoreCase))
+            {
+                notaFinal = notaLimpia;
+            }
+            else
+            {
+                notaFinal = $"{notaBase} | {notaLimpia}";
+            }
         }
         else
         {
-            if (request.MembresiaId == null)
-                throw new Exception("Debe especificar un monto o una membresía.");
-
-            var membresia = await _context.Membresias
-                .Include(m => m.Plan)
-                .FirstOrDefaultAsync(m => m.Id == request.MembresiaId);
-
-            if (membresia == null)
-                throw new Exception("Membresía no encontrada.");
-
-            montoFinal = membresia.Plan.Precio;
+            notaFinal = notaBase;
         }
 
         var pago = new Pago
         {
             UserId = request.UserId,
-            MembresiaId = request.MembresiaId,
+            MembresiaId = membresia.Id,
             Monto = montoFinal,
             Metodo = request.Metodo,
-            Nota = request.Nota,
+            Nota = notaFinal,
             Fecha = DateTime.UtcNow,
             PeriodoMes = periodoMes,
             PeriodoAnio = periodoAnio,
@@ -201,7 +231,9 @@ public class PagoService
                 UserId = c.Id,
                 Nombre = $"{c.Nombre} {c.Apellido}",
                 Email = c.Email ?? string.Empty,
+                MembresiaId = membresia?.Id,
                 PlanNombre = membresia?.Plan?.Nombre,
+                PlanPrecio = membresia?.Plan?.Precio,
                 MembresiaVence = membresia?.FechaFin,
                 EstadoGeneral = estadoGeneral,
                 Periodos = detallePeriodos,

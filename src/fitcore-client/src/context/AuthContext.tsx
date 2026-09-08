@@ -1,11 +1,11 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, type ReactNode } from "react";
 
 interface AuthUser {
   id: string;
   email: string;
   nombre: string;
   apellido: string;
-  categoria: string;
+  categoria: string | number;
 }
 
 interface AuthContextType {
