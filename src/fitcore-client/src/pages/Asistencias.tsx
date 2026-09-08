@@ -117,9 +117,9 @@ export default function Asistencias() {
 
   // ── Cargar clientes activos (una sola vez) ─────────────────────────────────
   useEffect(() => {
-    apiFetch("/api/clientes")
+    apiFetch("/api/usuarios?categoria=Cliente&activo=true")
       .then((r) => r.json())
-      .then((data: Cliente[]) => setClientes(data.filter((c) => c.activo)));
+      .then((data: Cliente[]) => setClientes(data));
   }, []);
 
   // ── Cargar asistencias del día seleccionado ────────────────────────────────

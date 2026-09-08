@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:5192";
+const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5192";
 
 function getToken(): string | null {
   return localStorage.getItem("fitcore_token");

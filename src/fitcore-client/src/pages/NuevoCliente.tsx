@@ -56,8 +56,8 @@ export default function NuevoCliente() {
     setLoading(true);
 
     try {
-      // 1. Crear el cliente
-      const response = await apiFetch("/api/clientes", {
+      // 1. Crear el cliente (categoría Cliente)
+      const response = await apiFetch("/api/usuarios", {
         method: "POST",
         body: JSON.stringify({ ...form, categoria: 2 }),
       });

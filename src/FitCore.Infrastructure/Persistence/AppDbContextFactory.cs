@@ -8,9 +8,13 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
 {
     public AppDbContext CreateDbContext(string[] args)
     {
+        var basePath = Path.Combine(Directory.GetCurrentDirectory(), "../FitCore.Api");
+
         var configuration = new ConfigurationBuilder()
-            .SetBasePath(Path.Combine(Directory.GetCurrentDirectory(), "../FitCore.Api"))
+            .SetBasePath(basePath)
             .AddJsonFile("appsettings.json", optional: false)
+            .AddJsonFile("appsettings.Development.json", optional: true)
+            .AddEnvironmentVariables()
             .Build();
 
         var connectionString = configuration.GetConnectionString("Default");

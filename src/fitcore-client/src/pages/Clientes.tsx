@@ -105,7 +105,7 @@ export default function Clientes() {
 
   useEffect(() => {
     Promise.all([
-      apiFetch("/api/clientes").then((res) => res.json()),
+      apiFetch("/api/usuarios?categoria=Cliente").then((res) => res.json()),
       apiFetch("/api/planes").then((res) => res.json()),
     ])
       .then(([clientesData, planesData]) => {
@@ -150,7 +150,7 @@ export default function Clientes() {
 
     try {
       // 1. Actualizar datos del cliente
-      const res = await apiFetch(`/api/clientes/${editing.id}`, {
+      const res = await apiFetch(`/api/usuarios/${editing.id}`, {
         method: "PUT",
         body: JSON.stringify(payload),
       });
@@ -224,13 +224,13 @@ export default function Clientes() {
     setTogglingId(c.id);
     try {
       if (c.activo) {
-        const res = await apiFetch(`/api/clientes/${c.id}`, { method: "DELETE" });
+        const res = await apiFetch(`/api/usuarios/${c.id}`, { method: "DELETE" });
         if (!res.ok) throw new Error("DELETE failed");
         setClientes((prev) => prev.map((x) => (x.id === c.id ? { ...x, activo: false } : x)));
         toast({ variant: "success", title: "Cliente desactivado", description: "El cliente quedó inactivo." });
       } else {
         const payload = { ...c, activo: true };
-        const res = await apiFetch(`/api/clientes/${c.id}`, {
+        const res = await apiFetch(`/api/usuarios/${c.id}`, {
           method: "PUT",
           body: JSON.stringify(payload),
         });
@@ -255,7 +255,7 @@ export default function Clientes() {
     if (!deleting) return;
     setDeleteLoading(true);
     try {
-      const res = await apiFetch(`/api/clientes/${deleting.id}/permanente`, { method: "DELETE" });
+      const res = await apiFetch(`/api/usuarios/${deleting.id}/permanente`, { method: "DELETE" });
       if (!res.ok) throw new Error("DELETE failed");
       setClientes((prev) => prev.filter((c) => c.id !== deleting.id));
       setDeleteOpen(false);

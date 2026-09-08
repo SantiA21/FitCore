@@ -19,7 +19,7 @@ builder.Services.AddControllers()
     );
 builder.Services.AddEndpointsApiExplorer();
 
-// Swagger con soporte para JWT
+// OpenAPI
 builder.Services.AddOpenApi();
 
 // Base de datos
@@ -93,5 +93,20 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+// Seed de datos de prueba al iniciar en desarrollo
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    try
+    {
+        await DataSeeder.SeedAsync(scope.ServiceProvider);
+    }
+    catch (Exception ex)
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Error al ejecutar DataSeeder.");
+    }
+}
 
 app.Run();

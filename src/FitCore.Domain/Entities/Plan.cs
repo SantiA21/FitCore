@@ -1,4 +1,4 @@
-﻿namespace FitCore.Domain.Entities;
+namespace FitCore.Domain.Entities;
 
 public class Plan
 {
@@ -7,6 +7,5 @@ public class Plan
     public decimal Precio { get; set; }
     public int DuracionEnDias { get; set; }
     public bool Activo { get; set; } = true;
-    public Guid GymId { get; set; }
     public ICollection<Membresia> Membresias { get; set; } = new List<Membresia>();
-}
+}

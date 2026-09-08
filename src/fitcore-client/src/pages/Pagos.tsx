@@ -66,7 +66,7 @@ export default function Pagos() {
 
   async function fetchUsers() {
     try {
-      const res = await apiFetch("/api/clientes");
+      const res = await apiFetch("/api/usuarios?categoria=Cliente");
       const data = await res.json();
       setUsers(data);
     } catch {

@@ -1,38 +1,50 @@
 using FitCore.Domain.Entities;
-using FitCore.Infrastructure.Services;
+using FitCore.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using FitCore.Infrastructure.Persistence;
 
 namespace FitCore.Api.Controllers;
 
 [Authorize]
 [ApiController]
 [Route("api/[controller]")]
-public class ClientesController : ControllerBase
+[Route("api/clientes")] // Alias para retrocompatibilidad
+public class UsuariosController : ControllerBase
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly AppDbContext _context;
 
-    public ClientesController(UserManager<AppUser> userManager, AppDbContext context)
+    public UsuariosController(UserManager<AppUser> userManager, AppDbContext context)
     {
         _userManager = userManager;
         _context = context;
     }
 
-    // GET api/clientes
+    // GET api/usuarios?categoria=Cliente&activo=true
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll(
+        [FromQuery] Categoria? categoria = null,
+        [FromQuery] bool? activo = null)
     {
-        var usuarios = await _userManager.Users.ToListAsync();
+        var query = _userManager.Users.AsQueryable();
 
-        // Traer membresías activas de todos los usuarios en una sola query
+        if (categoria.HasValue)
+            query = query.Where(u => u.Categoria == categoria.Value);
+
+        if (activo.HasValue)
+            query = query.Where(u => u.Activo == activo.Value);
+
+        var usuarios = await query.ToListAsync();
+
+        // Traer membresías activas de los usuarios filtrados
         var hoy = DateTime.UtcNow;
+        var userIds = usuarios.Select(u => u.Id).ToList();
+
         var membresiasActivas = await _context.Membresias
             .Include(m => m.Plan)
-            .Where(m => m.Activa && m.FechaFin >= hoy)
+            .Where(m => userIds.Contains(m.UserId) && m.Activa && m.FechaFin >= hoy)
             .ToListAsync();
 
         var result = usuarios.Select(u =>
@@ -44,7 +56,7 @@ public class ClientesController : ControllerBase
         return Ok(result);
     }
 
-    // GET api/clientes/{id}
+    // GET api/usuarios/{id}
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(string id)
     {
@@ -60,15 +72,20 @@ public class ClientesController : ControllerBase
         return Ok(ToDto(user, mem));
     }
 
-    // GET api/clientes/activos/count
+    // GET api/usuarios/activos/count?categoria=Cliente
     [HttpGet("activos/count")]
-    public async Task<IActionResult> GetActivosCount()
+    public async Task<IActionResult> GetActivosCount([FromQuery] Categoria? categoria = null)
     {
-        var count = await _userManager.Users.CountAsync(u => u.Activo);
+        var query = _userManager.Users.Where(u => u.Activo);
+
+        if (categoria.HasValue)
+            query = query.Where(u => u.Categoria == categoria.Value);
+
+        var count = await query.CountAsync();
         return Ok(new { total = count });
     }
 
-    // POST api/clientes
+    // POST api/usuarios
     [HttpPost]
     public async Task<IActionResult> Create(CreateUsuarioDto dto)
     {
@@ -96,7 +113,7 @@ public class ClientesController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = user.Id }, ToDto(user, null));
     }
 
-    // PUT api/clientes/{id}
+    // PUT api/usuarios/{id}
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(string id, UpdateUsuarioDto dto)
     {
@@ -118,7 +135,7 @@ public class ClientesController : ControllerBase
         return NoContent();
     }
 
-    // DELETE api/clientes/{id} → soft delete
+    // DELETE api/usuarios/{id} → soft delete
     [HttpDelete("{id}")]
     public async Task<IActionResult> Deactivate(string id)
     {
@@ -130,7 +147,7 @@ public class ClientesController : ControllerBase
         return NoContent();
     }
 
-    // DELETE api/clientes/{id}/permanente → hard delete
+    // DELETE api/usuarios/{id}/permanente → hard delete
     [HttpDelete("{id}/permanente")]
     public async Task<IActionResult> HardDelete(string id)
     {

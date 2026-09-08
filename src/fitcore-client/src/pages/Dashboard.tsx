@@ -35,8 +35,8 @@ export default function Dashboard() {
   const fetchData = async () => {
     try {
       const [resClientes, resActivos] = await Promise.all([
-        apiFetch("/api/clientes"),
-        apiFetch("/api/clientes/activos/count")
+        apiFetch("/api/usuarios?categoria=Cliente"),
+        apiFetch("/api/usuarios/activos/count?categoria=Cliente")
       ]);
 
       const dataClientes = await resClientes.json();

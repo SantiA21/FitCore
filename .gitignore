@@ -5,6 +5,16 @@
 
 # dotenv files
 .env
+.env.local
+.env.*.local
+
+# Configuración de desarrollo local (.NET)
+src/FitCore.Api/appsettings.Development.json
+src/FitCore.Api/appsettings.*.json
+
+# Variables de entorno del frontend (Vite)
+src/fitcore-client/.env.local
+src/fitcore-client/.env.*.local
 
 # User-specific files
 *.rsuser
