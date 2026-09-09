@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using FitCore.Domain.Entities;
 using FitCore.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
@@ -16,6 +17,29 @@ public class AsistenciasController : ControllerBase
     public AsistenciasController(AppDbContext context)
     {
         _context = context;
+    }
+
+    // GET api/asistencias/mis-asistencias
+    [HttpGet("mis-asistencias")]
+    public async Task<IActionResult> GetMisAsistencias()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+        var asistencias = await _context.Asistencias
+            .Where(a => a.UserId == userId)
+            .OrderByDescending(a => a.Fecha)
+            .ThenByDescending(a => a.HoraIngreso)
+            .Take(100)
+            .Select(a => new
+            {
+                a.Id,
+                a.Fecha,
+                a.HoraIngreso
+            })
+            .ToListAsync();
+
+        return Ok(asistencias);
     }
 
     // GET api/asistencias?fecha=2025-04-21

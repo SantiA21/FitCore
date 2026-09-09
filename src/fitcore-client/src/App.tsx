@@ -13,6 +13,9 @@ import Planes from "./pages/Planes";
 import PlanesAdmin from "./pages/PlanesAdmin";
 import { Toaster } from "./components/ui/toaster";
 import EstadoCuenta from "./pages/EstadoCuenta";
+import DashboardCliente from "./pages/DashboardCliente";
+import MisAsistencias from "./pages/MisAsistencias";
+import MiPerfil from "./pages/MiPerfil";
 
 function App() {
   return (
@@ -63,7 +66,22 @@ function App() {
           {/* Rutas Cliente */}
           <Route path="/dashboard-cliente" element={
             <ProtectedRoute allowedCategorias={["Cliente"]}>
+              <Layout><DashboardCliente /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/mi-membresia" element={
+            <ProtectedRoute allowedCategorias={["Cliente"]}>
               <Layout><Planes /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/mis-asistencias" element={
+            <ProtectedRoute allowedCategorias={["Cliente"]}>
+              <Layout><MisAsistencias /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/mi-perfil" element={
+            <ProtectedRoute allowedCategorias={["Cliente"]}>
+              <Layout><MiPerfil /></Layout>
             </ProtectedRoute>
           } />
 

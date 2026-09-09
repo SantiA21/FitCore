@@ -1,8 +1,7 @@
-import { LayoutDashboard, Users, CreditCard, Calendar, User, LogOut, ClipboardList } from "lucide-react";
+import { LayoutDashboard, Users, CreditCard, Calendar, User, LogOut, ClipboardList, ShieldCheck } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
-import { ShieldCheck } from "lucide-react";
 
 interface NavItem {
   label: string;
@@ -20,7 +19,10 @@ const adminNavItems: NavItem[] = [
 ];
 
 const clienteNavItems: NavItem[] = [
-  { label: "Mi Membresía", icon: ClipboardList, path: "/dashboard-cliente" },
+  { label: "Inicio", icon: LayoutDashboard, path: "/dashboard-cliente" },
+  { label: "Mi Membresía", icon: CreditCard, path: "/mi-membresia" },
+  { label: "Mis Asistencias", icon: Calendar, path: "/mis-asistencias" },
+  { label: "Mi Perfil", icon: User, path: "/mi-perfil" },
 ];
 
 export default function Sidebar() {

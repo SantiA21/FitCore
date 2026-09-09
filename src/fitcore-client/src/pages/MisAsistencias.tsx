@@ -1,0 +1,212 @@
+import { useEffect, useState } from "react";
+import {
+  Calendar,
+  Clock,
+  CheckCircle2,
+  TrendingUp,
+  Flame,
+  Award,
+  Filter,
+  CalendarCheck
+} from "lucide-react";
+import { apiFetch } from "@/lib/api";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+
+interface Asistencia {
+  id: number;
+  fecha: string;
+  horaIngreso: string;
+}
+
+export default function MisAsistencias() {
+  const [asistencias, setAsistencias] = useState<Asistencia[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filtroMes, setFiltroMes] = useState<string>("todos");
+
+  useEffect(() => {
+    setLoading(true);
+    apiFetch("/api/asistencias/mis-asistencias")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: Asistencia[]) => setAsistencias(data))
+      .catch(() => setAsistencias([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const ahora = new Date();
+  const mesActual = ahora.getMonth();
+  const anioActual = ahora.getFullYear();
+
+  // Filtrado
+  const asistenciasFiltradas = asistencias.filter((a) => {
+    if (filtroMes === "todos") return true;
+    const f = new Date(a.fecha);
+    if (filtroMes === "este-mes") {
+      return f.getMonth() === mesActual && f.getFullYear() === anioActual;
+    }
+    if (filtroMes === "mes-pasado") {
+      const mesPasado = mesActual === 0 ? 11 : mesActual - 1;
+      const anioPasado = mesActual === 0 ? anioActual - 1 : anioActual;
+      return f.getMonth() === mesPasado && f.getFullYear() === anioPasado;
+    }
+    return true;
+  });
+
+  const asistenciasMes = asistencias.filter((a) => {
+    const f = new Date(a.fecha);
+    return f.getMonth() === mesActual && f.getFullYear() === anioActual;
+  });
+
+  const formatFechaLinda = (fechaStr: string) => {
+    try {
+      // Evitar desfases por timezone sumando la hora o parseando YYYY-MM-DD directamente
+      const [y, m, d] = fechaStr.split("-").map(Number);
+      const date = new Date(y, m - 1, d);
+      return date.toLocaleDateString("es-AR", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric"
+      });
+    } catch {
+      return fechaStr;
+    }
+  };
+
+  return (
+    <div className="space-y-8 max-w-5xl">
+      {/* ── Encabezado ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight flex items-center gap-3">
+            <CalendarCheck className="w-8 h-8 text-orange-600" /> Mis Asistencias
+          </h1>
+          <p className="text-sm text-gray-500 font-medium mt-1">
+            Historial de accesos y constancia de tus entrenamientos en FitCore.
+          </p>
+        </div>
+
+        {/* Filtro rápido */}
+        <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-2xl p-1.5 shadow-2xs">
+          <Filter className="w-4 h-4 text-gray-400 ml-2" />
+          <select
+            value={filtroMes}
+            onChange={(e) => setFiltroMes(e.target.value)}
+            className="text-xs font-semibold text-gray-700 bg-transparent border-0 focus:ring-0 outline-none pr-3 cursor-pointer"
+          >
+            <option value="todos">Todos los registros</option>
+            <option value="este-mes">Este mes ({asistenciasMes.length})</option>
+            <option value="mes-pasado">Mes anterior</option>
+          </select>
+        </div>
+      </div>
+
+      {/* ── Tarjetas de Estadísticas ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white border border-gray-200/80 rounded-3xl p-6 shadow-xs flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center shrink-0">
+            <Flame className="w-7 h-7" />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Este Mes</p>
+            <p className="text-3xl font-black text-gray-900 mt-0.5">
+              {loading ? "..." : asistenciasMes.length}
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5">días entrenados</p>
+          </div>
+        </div>
+
+        <div className="bg-white border border-gray-200/80 rounded-3xl p-6 shadow-xs flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+            <Award className="w-7 h-7" />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Histórico</p>
+            <p className="text-3xl font-black text-gray-900 mt-0.5">
+              {loading ? "..." : asistencias.length}
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5">visitas registradas</p>
+          </div>
+        </div>
+
+        <div className="bg-white border border-gray-200/80 rounded-3xl p-6 shadow-xs flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+            <TrendingUp className="w-7 h-7" />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Promedio Semanal</p>
+            <p className="text-3xl font-black text-gray-900 mt-0.5">
+              {loading ? "..." : (asistenciasMes.length / 4).toFixed(1)}
+            </p>
+            <p className="text-xs text-emerald-600 font-bold mt-0.5">sesiones por semana</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Listado de Asistencias ── */}
+      <div className="bg-white border border-gray-200/80 rounded-3xl shadow-xs overflow-hidden">
+        <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-bold text-gray-900">Registro de Ingresos</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Cada vez que presentás tu acceso en recepción o molinete</p>
+          </div>
+          <Badge variant="outline" className="text-xs font-semibold px-3 py-1">
+            {asistenciasFiltradas.length} {asistenciasFiltradas.length === 1 ? "registro" : "registros"}
+          </Badge>
+        </div>
+
+        {loading ? (
+          <div className="p-6 space-y-3">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-16 w-full rounded-2xl" />
+            ))}
+          </div>
+        ) : asistenciasFiltradas.length === 0 ? (
+          <div className="p-12 text-center space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-gray-100 text-gray-400 flex items-center justify-center mx-auto">
+              <Calendar className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-gray-700">No hay asistencias registradas</p>
+              <p className="text-xs text-gray-400 mt-1 max-w-sm mx-auto">
+                Tus ingresos al gimnasio se registrarán de forma automática cuando hagas check-in en el acceso.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {asistenciasFiltradas.map((item) => (
+              <div
+                key={item.id}
+                className="p-4 sm:p-5 flex items-center justify-between hover:bg-gray-50/60 transition-colors"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-100 text-orange-600 flex items-center justify-center shrink-0">
+                    <Calendar className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-900 capitalize">
+                      {formatFechaLinda(item.fecha)}
+                    </h3>
+                    <p className="text-xs text-gray-400 flex items-center gap-2 mt-0.5">
+                      <Clock className="w-3.5 h-3.5" />
+                      Hora de ingreso: <span className="font-semibold text-gray-700">{item.horaIngreso.slice(0, 5)} hs</span>
+                      <span>• Sede Central</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/50">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    Presente
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

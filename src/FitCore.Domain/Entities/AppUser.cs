@@ -18,6 +18,12 @@ public class AppUser : IdentityUser
     public bool Activo { get; set; } = true;
     public Categoria Categoria { get; set; } = Categoria.Cliente;
 
+    // Contacto de emergencia y Ficha de Salud
+    public string? ContactoEmergenciaNombre { get; set; }
+    public string? ContactoEmergenciaTelefono { get; set; }
+    public string? ContactoEmergenciaRelacion { get; set; }
+    public DateOnly? AptoMedicoVence { get; set; }
+
     // Relaciones — el plan actual se obtiene a través de la membresía activa
     public ICollection<Membresia> Membresias { get; set; } = [];
     public ICollection<Asistencia> Asistencias { get; set; } = [];

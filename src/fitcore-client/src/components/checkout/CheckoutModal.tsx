@@ -255,15 +255,16 @@ export default function CheckoutModal({
 
   // 1. Manejo de Mercado Pago
   const handlePagarMercadoPago = async () => {
+    if (!plan) return;
     setLoading(true);
     try {
       const res = await apiFetch("/api/pagos-cliente/iniciar-mercadopago", {
         method: "POST",
         body: JSON.stringify({
           planId: plan.id,
-          backUrlSuccess: `${window.location.origin}/dashboard-cliente?mp_status=approved&plan_id=${plan.id}`,
-          backUrlFailure: `${window.location.origin}/dashboard-cliente?mp_status=failure`,
-          backUrlPending: `${window.location.origin}/dashboard-cliente?mp_status=pending`,
+          backUrlSuccess: `${window.location.origin}/mi-membresia?mp_status=approved&plan_id=${plan.id}`,
+          backUrlFailure: `${window.location.origin}/mi-membresia?mp_status=failure`,
+          backUrlPending: `${window.location.origin}/mi-membresia?mp_status=pending`,
         }),
       });
 
@@ -349,6 +350,7 @@ export default function CheckoutModal({
       return;
     }
 
+    if (!plan) return;
     setLoading(true);
     try {
       const res = await apiFetch("/api/pagos-cliente/confirmar-tarjeta", {
@@ -399,6 +401,7 @@ export default function CheckoutModal({
       return;
     }
 
+    if (!plan) return;
     setLoading(true);
     try {
       const res = await apiFetch("/api/pagos-cliente/confirmar-transferencia", {

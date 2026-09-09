@@ -1,141 +1,141 @@
 # FitCore — Gestor de administración de gimnasios
 
-Sistema de gestión integral para gimnasios: clientes, membresías, pagos, asistencias y estadísticas.
+Sistema integral para gimnasios tradicionales de musculación: gestión de socios, membresías, cobranzas, control de asistencias, estados de cuenta y portal exclusivo de autogestión para clientes.
 
-## Stack
+---
+
+## 🛠️ Stack Tecnológico
 
 | Capa | Tecnología |
 |---|---|
-| Backend | ASP.NET Core 10 (C#) |
-| Frontend | React 19 + TypeScript + Vite + Tailwind + shadcn/ui |
-| Base de datos | PostgreSQL 17 (Docker en desarrollo) |
-| ORM | Entity Framework Core 10 + Npgsql |
-| Auth | ASP.NET Core Identity + JWT |
-| API Docs | Scalar (`/scalar/v1`) |
+| **Backend** | ASP.NET Core 10 (C#) |
+| **Frontend** | React 19 + TypeScript + Vite + Tailwind CSS + shadcn/ui |
+| **Base de datos** | PostgreSQL 17 (vía Docker en desarrollo, puerto host `5433`) |
+| **ORM** | Entity Framework Core 10 + Npgsql |
+| **Autenticación** | ASP.NET Core Identity + JWT (Tokens con roles Admin, Entrenador y Cliente) |
+| **Pagos** | Integración con Checkout Mercado Pago, Tarjeta y Transferencia bancaria |
+| **Documentación API** | Scalar en `http://localhost:5192/scalar/v1` |
 
 ---
 
-## Desarrollo con Docker
+## 🚀 Guía de Inicio Rápido (Primera vez)
 
 ### Prerrequisitos
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (debe estar iniciado)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download) (para aplicar migraciones de Entity Framework Core)
+- [Node.js 22+](https://nodejs.org/) (para correr el frontend)
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows/Mac/Linux)
-- [.NET 10 SDK](https://dotnet.microsoft.com/download) — solo para correr migraciones EF Core desde el host
-- [Node.js 22+](https://nodejs.org/) — solo para el frontend
+---
 
-### 1. Clonar y configurar variables de entorno
-
-```bash
-git clone <url-del-repo>
-cd FitCore
-
-# Crear el .env local a partir del template
+### Paso 1: Variables de entorno
+Desde la raíz del proyecto, copia el archivo de ejemplo:
+```powershell
 cp .env.example .env
-# Editá .env si querés cambiar las credenciales de Postgres o el JWT key
 ```
+*(Puedes editar `.env` si deseas cambiar contraseñas de Postgres o claves de JWT / Mercado Pago).*
 
-### 2. Levantar los contenedores (DB + API)
+---
 
-```bash
-docker compose up --build
+### Paso 2: Levantar los contenedores de Docker
+Ejecuta en la raíz del proyecto:
+```powershell
+docker compose up -d --build
 ```
+Esto iniciará:
+* **`fitcore_db`** → PostgreSQL en `localhost:5433`
+* **`fitcore_api`** → Backend ASP.NET Core en `http://localhost:5192`
 
-Esto levanta:
-- **`fitcore_db`** → PostgreSQL en `localhost:5433`
-- **`fitcore_api`** → API .NET en `http://localhost:5192`
+> 💡 **Nota sobre puertos:** Si `fitcore_api` está corriendo en Docker, ocupará el puerto `5192`. Si prefieres ejecutar el backend en Windows con `dotnet run` o `dotnet watch`, primero detén el contenedor con `docker stop fitcore_api` para evitar conflictos de puerto.
 
-La API espera a que Postgres esté healthy antes de arrancar (healthcheck configurado).
+---
 
-### 3. Aplicar migraciones de EF Core
-
-La primera vez (o cuando haya nuevas migraciones):
-
-```bash
-cd src/FitCore.Infrastructure
-dotnet ef database update --startup-project ../FitCore.Api
+### Paso 3: Aplicar las migraciones de Base de Datos
+Aplica las migraciones de Entity Framework Core sobre PostgreSQL:
+```powershell
+dotnet ef database update --project src/FitCore.Infrastructure --startup-project src/fitcore.api
 ```
+*(El backend incluye un `DataSeeder` automático que creará los usuarios y planes iniciales si la base de datos está vacía).*
 
-> Las migraciones apuntan al Postgres del contenedor vía `localhost:5433`, usando la connection string de `appsettings.Development.json`.
+---
 
-### 4. Levantar el frontend (fuera de Docker)
-
-```bash
+### Paso 4: Levantar el Frontend
+En una nueva terminal, ingresa a la carpeta del cliente:
+```powershell
 cd src/fitcore-client
-cp .env.example .env.local   # solo la primera vez
+cp .env.example .env.local   # Solo la primera vez
 npm install
 npm run dev
 ```
-
-El frontend corre en `http://localhost:5173` y habla con la API en `http://localhost:5192`.
-
-### 5. Verificar que todo funciona
-
-```bash
-# Estado de los contenedores
-docker compose ps
-
-# Logs de la API
-docker compose logs api -f
-
-# Acceder a la documentación de la API
-open http://localhost:5192/scalar/v1
-```
+El frontend quedará activo en: 👉 **`http://localhost:5173`**
 
 ---
 
-## Comandos útiles
+## 📱 Módulos y Portales del Sistema
 
-### Resetear la base de datos local
+### 👑 Portal de Administración (`Admin` / `Entrenador`)
+* **Dashboard (`/dashboard-admin`):** Métricas en tiempo real de socios activos, ingresos mensuales, asistencias de hoy y planes más elegidos.
+* **Clientes (`/clientes`):** Listado completo, alta, edición, estados de membresía y búsqueda.
+* **Planes (`/planes-admin`):** ABM de planes de entrenamiento, precios y duración en días.
+* **Cobranzas y Pagos (`/pagos`):** Historial y registro de pagos manuales o automáticos.
+* **Estado de Cuenta (`/estado-cuenta`):** Visualización de balances y cuotas de los socios.
+* **Control de Asistencias (`/asistencias`):** Registro de ingresos por fecha, hora y cliente.
 
-```bash
-# Para y elimina los contenedores + el volumen de datos
+### 🏋️ Portal del Cliente (`Cliente`)
+* **Inicio (`/dashboard-cliente`):** Resumen personal, días restantes de membresía, horarios de apertura de sala de musculación, termómetro de concurrencia en tiempo real (horarios pico vs. tranquilos) y novedades de equipamiento.
+* **Mi Membresía (`/mi-membresia`):** Consulta de plan activo, contratación y renovación online mediante Mercado Pago, tarjeta o transferencia con emisión de recibos.
+* **Mis Asistencias (`/mis-asistencias`):** Historial de visitas al gimnasio, constancia del mes y promedio de entrenamientos por semana.
+* **Mi Perfil (`/mi-perfil`):** Datos personales, contacto de emergencia ante imprevistos y semáforo de vigencia del Apto Médico anual (persistido en PostgreSQL).
+
+---
+
+## 💻 Comandos Frecuentes
+
+### Reconstruir la API en Docker tras modificar código C#
+Si estás corriendo el backend dentro de Docker y modificas código backend:
+```powershell
+docker compose build api
+docker compose up -d api
+```
+
+### Modo desarrollo local del Backend (sin Docker para la API)
+Si prefieres programar en C# con recarga en caliente:
+```powershell
+# 1. Deja solo la base de datos en Docker
+docker stop fitcore_api
+
+# 2. Corre el backend localmente
+cd src/fitcore.api
+dotnet watch run
+```
+
+### Crear y aplicar nuevas migraciones de EF Core
+```powershell
+# Crear migración
+dotnet ef migrations add NombreDeLaMigracion --project src/FitCore.Infrastructure --startup-project src/fitcore.api
+
+# Aplicar a la BD
+dotnet ef database update --project src/FitCore.Infrastructure --startup-project src/fitcore.api
+```
+
+### Resetear la Base de Datos desde cero
+```powershell
+# Detener y borrar contenedores + volumen de datos
 docker compose down -v
 
-# Volver a levantar (base limpia)
-docker compose up -d
+# Volver a levantar PostgreSQL limpio
+docker compose up -d db
 
-# Re-aplicar todas las migraciones
-cd src/FitCore.Infrastructure
-dotnet ef database update --startup-project ../FitCore.Api
+# Aplicar migraciones
+dotnet ef database update --project src/FitCore.Infrastructure --startup-project src/fitcore.api
 ```
 
-### Agregar una nueva migración EF Core
-
-```bash
-cd src/FitCore.Infrastructure
-dotnet ef migrations add NombreDeLaMigracion --startup-project ../FitCore.Api
-```
-
-### Rebuild de la imagen del backend
-
-```bash
-docker compose build api
-docker compose up -d
-```
-
----
-
-## Build de producción (frontend)
-
-El frontend tiene un `Dockerfile.prod` separado (solo para deploy, no para desarrollo):
-
-```bash
+### Build de Producción del Frontend
+```powershell
 cd src/fitcore-client
-docker build \
-  --file Dockerfile.prod \
-  --build-arg VITE_API_URL=https://api.tudominio.com \
-  --tag fitcore-client:latest \
-  .
+npm run build
 ```
-
----
-
-## Features
-
-- ✅ Gestión de clientes (registro, estado de membresía, historial de asistencia)
-- ✅ Pagos y planes (mensualidades, fechas, avisos de cuotas por vencer)
-- ✅ Control de acceso y asistencia (check-in rápido, alerta si cuota vencida)
-- ✅ Panel y estadísticas (clientes activos, ingresos del mes, métricas)
-- 🔜 Agenda y calendario de entrenamientos
-- 🔜 Seguimiento de progreso de clientes (peso, medidas, fotos)
-- 🔜 Reportes descargables
+O empaquetado en imagen Docker para producción:
+```powershell
+cd src/fitcore-client
+docker build -f Dockerfile.prod -t fitcore-client:latest .
+```
