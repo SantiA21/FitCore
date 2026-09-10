@@ -6,7 +6,7 @@ services:
     region: oregon
     dockerfilePath: src/FitCore.Api/Dockerfile
     dockerContext: .
-    healthCheckPath: /scalar/v1
+    healthCheckPath: /health
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production

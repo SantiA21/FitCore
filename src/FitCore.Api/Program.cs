@@ -90,6 +90,11 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
+// Endpoint de salud sin auth, disponible en cualquier entorno — Scalar/OpenAPI
+// solo se mapean en Development, asi que el health check de Render (u otro
+// orquestador) necesita una ruta propia que no dependa de eso.
+app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
+
 app.UseCors("FitCorePolicy");
 app.UseHttpsRedirection();
 app.UseAuthentication();
