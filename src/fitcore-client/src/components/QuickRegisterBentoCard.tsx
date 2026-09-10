@@ -79,13 +79,13 @@ export default function QuickRegisterBentoCard({
   };
 
   return (
-    <BentoCard className={cn("flex flex-col h-a !p-6", className)} delay={delay}>
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2.5 bg-black rounded-2xl shadow-lg shadow-black/20">
-          <UserPlus className="h-4 w-4 text-white" />
+    <BentoCard className={cn("flex flex-col !p-4", className)} delay={delay}>
+      <div className="flex items-center gap-2.5 mb-3">
+        <div className="p-2 bg-black rounded-xl shadow-lg shadow-black/20">
+          <UserPlus className="h-3.5 w-3.5 text-white" />
         </div>
         <div>
-          <h3 className="text-[14px] font-black text-black tracking-tight">Registro Rápido</h3>
+          <h3 className="text-xs font-black text-black tracking-tight">Registro Rápido</h3>
           <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">
             {fechaSeleccionada
               ? fechaSeleccionada.toLocaleDateString("es-AR", { day: "numeric", month: "long" })
@@ -94,15 +94,15 @@ export default function QuickRegisterBentoCard({
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 flex-1">
-        <div className="space-y-2">
+      <div className="flex flex-col gap-3 flex-1">
+        <div className="space-y-1.5">
           <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Seleccionar Cliente</label>
           <Select
             value={formClienteId}
             onValueChange={setFormClienteId}
             disabled={saving}
           >
-            <SelectTrigger className="h-12 text-[12px] rounded-2xl border-gray-100 bg-white shadow-sm px-4">
+            <SelectTrigger className="h-10 text-[12px] rounded-xl border-gray-100 bg-white shadow-sm px-4">
               <SelectValue>
                 {formClienteId
                   ? (() => {
@@ -135,7 +135,7 @@ export default function QuickRegisterBentoCard({
         <Button
           onClick={handleRegistrar}
           disabled={saving || !formClienteId}
-          className="w-full h-12 rounded-2xl bg-black text-white hover:bg-black/90 text-[12px] font-black uppercase tracking-widest mt-auto shadow-xl shadow-black/10 active:scale-95 transition-all group"
+          className="w-full h-10 rounded-xl bg-black text-white hover:bg-black/90 text-[11px] font-black uppercase tracking-widest mt-auto shadow-xl shadow-black/10 active:scale-95 transition-all group"
         >
           {saving ? "Registrando..." : (
             <span className="flex items-center gap-2">

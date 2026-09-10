@@ -100,10 +100,10 @@ export default function CalendarBentoCard({ className, delay, onSelectDate, sele
 
   return (
     <BentoCard className={cn("flex flex-col h-full !p-4", className)} delay={delay}>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <CalendarIcon className="h-4 w-4 text-primary" />
-          <h3 className="text-sm font-bold text-black">{MESES[mes]} {anio}</h3>
+          <CalendarIcon className="h-3.5 w-3.5 text-primary" />
+          <h3 className="text-xs font-bold text-black">{MESES[mes]} {anio}</h3>
         </div>
         <div className="flex items-center gap-1">
           <button onClick={irMesAnterior} className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
@@ -115,7 +115,7 @@ export default function CalendarBentoCard({ className, delay, onSelectDate, sele
         </div>
       </div>
 
-      <div className="grid grid-cols-7 mb-2">
+      <div className="grid grid-cols-7 mb-1">
         {DIAS_SEMANA.map((d) => (
           <div key={d} className="text-center text-[9px] font-bold text-gray-300 uppercase tracking-widest">
             {d}
@@ -196,15 +196,6 @@ export default function CalendarBentoCard({ className, delay, onSelectDate, sele
           </div>
         </TooltipProvider>
       )}
-
-      <div className="mt-3 pt-3 border-t border-gray-50 flex items-center justify-between">
-        <span className="text-[8px] text-gray-300 font-bold uppercase tracking-widest">Actividad</span>
-        <div className="flex gap-0.5">
-          <div className="h-1.5 w-1.5 rounded-full bg-accent/10" />
-          <div className="h-1.5 w-1.5 rounded-full bg-accent/30" />
-          <div className="h-1.5 w-1.5 rounded-full bg-accent" />
-        </div>
-      </div>
     </BentoCard>
   );
 }

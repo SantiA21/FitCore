@@ -26,16 +26,16 @@ export default function StatTile({ icon: Icon, value, label, color, onClick }: S
     <div
       onClick={onClick}
       className={cn(
-        "bg-white border border-gray-200/80 rounded-3xl p-6 shadow-xs flex items-center gap-4",
+        "bg-white border border-gray-200/80 rounded-2xl p-3.5 shadow-xs flex items-center gap-3",
         onClick && "cursor-pointer hover:border-gray-300 hover:shadow-sm transition-all"
       )}
     >
-      <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center shrink-0", COLOR_MAP[color])}>
-        <Icon className="h-7 w-7" />
+      <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", COLOR_MAP[color])}>
+        <Icon className="h-5 w-5" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider leading-tight">{label}</p>
-        <p className="text-2xl sm:text-3xl font-black text-gray-900 mt-1 truncate">{value}</p>
+        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider leading-tight truncate">{label}</p>
+        <p className="text-xl font-black text-gray-900 mt-0.5 truncate">{value}</p>
       </div>
     </div>
   );

@@ -9,8 +9,8 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto bg-[#fafafa]" style={{ marginLeft: '220px' }}>
-        <div className="p-8">
+      <main className="flex-1 overflow-y-auto bg-[#fafafa] min-w-0">
+        <div className="p-4 pt-20 md:p-8 h-full">
           {children}
         </div>
       </main>

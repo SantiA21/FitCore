@@ -27,72 +27,51 @@ export default function UpcomingSubscriptionsBentoCard({
   const navigate = useNavigate();
 
   return (
-    <BentoCard className={cn("flex flex-col h-full", className)} delay={delay}>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-rose-500/10 rounded-2xl">
-            <Clock className="h-5 w-5 text-rose-500" />
+    <BentoCard className={cn("flex flex-col !p-4", className)} delay={delay}>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 bg-rose-500/10 rounded-lg">
+            <Clock className="h-3.5 w-3.5 text-rose-500" />
           </div>
-          <div>
-            <h3 className="text-lg font-bold text-black tracking-tight">Suscripciones</h3>
-            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Próximos Vencimientos</p>
-          </div>
+          <h3 className="text-xs font-black text-black tracking-tight">Próximos Vencimientos</h3>
         </div>
         {vencimientos.length > 0 && (
-          <Badge variant="outline" className="text-[10px] font-bold border-rose-200 text-rose-600 bg-rose-50">
-            {vencimientos.length} por vencer
+          <Badge variant="outline" className="text-[9px] font-bold border-rose-200 text-rose-600 bg-rose-50">
+            {vencimientos.length}
           </Badge>
         )}
       </div>
 
-      <div className="space-y-2.5 flex-1 overflow-y-auto max-h-[220px] pr-1">
+      <div className="space-y-1.5 flex-1 overflow-y-auto max-h-[130px] pr-1">
         {vencimientos.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full py-8 text-center text-muted-foreground">
-            <div className="p-2.5 rounded-full bg-emerald-50 text-emerald-600 mb-2">
-              <CheckCircle2 className="h-5 w-5" />
-            </div>
-            <p className="text-xs font-semibold text-foreground">Sin vencimientos próximos</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Todas las membresías activas están al día.</p>
+          <div className="flex items-center justify-center gap-2 py-4 text-center text-muted-foreground">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+            <p className="text-[11px] font-semibold text-foreground">Todo al día</p>
           </div>
         ) : (
           vencimientos.map((exp) => {
-            const fechaStr = new Date(exp.fechaFin).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" });
             const esUrgente = exp.diasRestantes <= 2;
 
             return (
               <div
                 key={exp.id}
-                className="flex items-center justify-between p-2.5 rounded-xl hover:bg-gray-50 transition-all border border-gray-100 group"
+                className="flex items-center justify-between p-1.5 rounded-lg hover:bg-gray-50 transition-all group"
               >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 group-hover:bg-primary/10 group-hover:text-primary transition-colors shrink-0">
-                    <User className="h-4 w-4" />
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="h-6 w-6 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
+                    <User className="h-3 w-3" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-bold text-black truncate">{exp.nombre}</p>
-                    <p className="text-[10px] text-gray-400 truncate">{exp.plan} • Vence el {fechaStr}</p>
+                    <p className="text-[11px] font-bold text-black truncate">{exp.nombre}</p>
+                    <p className="text-[9px] text-gray-400 truncate">{exp.plan}</p>
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-1 shrink-0 ml-2">
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "text-[9px] font-black uppercase tracking-tighter rounded-md border-none px-1.5 py-0.5",
-                      esUrgente
-                        ? "bg-rose-500 text-white shadow-sm shadow-rose-500/20"
-                        : "bg-amber-500 text-white shadow-sm shadow-amber-500/20"
-                    )}
-                  >
-                    {esUrgente ? "Urgente" : "Próximo"}
-                  </Badge>
-                  <span className="text-[9px] font-bold text-gray-400">
-                    {exp.diasRestantes === 0
-                      ? "Hoy"
-                      : exp.diasRestantes === 1
-                      ? "Mañana"
-                      : `en ${exp.diasRestantes} días`}
-                  </span>
-                </div>
+                <span className={cn(
+                  "text-[9px] font-black uppercase shrink-0 ml-2 px-1.5 py-0.5 rounded-md",
+                  esUrgente ? "bg-rose-500 text-white" : "bg-amber-500 text-white"
+                )}>
+                  {exp.diasRestantes === 0 ? "Hoy" : exp.diasRestantes === 1 ? "Mañana" : `${exp.diasRestantes}d`}
+                </span>
               </div>
             );
           })
@@ -102,7 +81,7 @@ export default function UpcomingSubscriptionsBentoCard({
       <button
         type="button"
         onClick={() => navigate("/clientes")}
-        className="mt-3 w-full py-2.5 rounded-xl bg-gray-50 text-[10px] font-black uppercase tracking-widest text-gray-500 hover:bg-gray-100 hover:text-black transition-all cursor-pointer"
+        className="mt-2 w-full py-1.5 rounded-lg bg-gray-50 text-[9px] font-black uppercase tracking-widest text-gray-500 hover:bg-gray-100 hover:text-black transition-all cursor-pointer"
       >
         Ver Clientes y Membresías
       </button>
