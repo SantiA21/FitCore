@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
 import { Input } from "@/components/ui/input";
@@ -12,9 +12,13 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, isAuthenticated, isCliente } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  if (isAuthenticated) {
+    return <Navigate to={isCliente ? "/dashboard-cliente" : "/dashboard-admin"} replace />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
