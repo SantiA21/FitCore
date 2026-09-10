@@ -47,6 +47,7 @@ public class AsistenciasController : ControllerBase
     public async Task<IActionResult> GetByFecha([FromQuery] DateOnly fecha)
     {
         var asistencias = await _context.Asistencias
+            .AsNoTracking()
             .Include(a => a.User)
             .Where(a => a.Fecha == fecha)
             .OrderBy(a => a.HoraIngreso)

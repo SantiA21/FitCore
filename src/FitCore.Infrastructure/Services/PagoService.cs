@@ -138,6 +138,7 @@ public class PagoService
     public async Task<List<PagoResponse>> GetAll()
     {
         return await _context.Pagos
+            .AsNoTracking()
             .Include(p => p.User)
             .OrderByDescending(p => p.Fecha)
             .Select(p => new PagoResponse
@@ -167,27 +168,29 @@ public class PagoService
             .OrderBy(p => p.Anio).ThenBy(p => p.Mes)
             .ToList();
 
-        // Clientes con membresía activa
-        var clienteIds = await _context.Membresias
-            .Where(m => m.Activa && m.FechaFin >= hoy)
-            .Select(m => m.UserId)
-            .Distinct()
-            .ToListAsync();
-
-        var clientes = await _userManager.Users
-            .Where(u => u.Activo && clienteIds.Contains(u.Id))
-            .ToListAsync();
-
+        // Clientes con membresía activa: una sola consulta con el Usuario y el
+        // Plan ya incluidos (antes eran 3 round trips separados: ids, clientes
+        // y membresías).
         var membresias = await _context.Membresias
+            .AsNoTracking()
+            .Include(m => m.User)
             .Include(m => m.Plan)
-            .Where(m => clienteIds.Contains(m.UserId) && m.Activa && m.FechaFin >= hoy)
+            .Where(m => m.Activa && m.FechaFin >= hoy && m.User.Activo)
             .ToListAsync();
+
+        var clientes = membresias
+            .Select(m => m.User)
+            .DistinctBy(u => u.Id)
+            .ToList();
+
+        var clienteIds = clientes.Select(c => c.Id).ToList();
 
         // Pagos en los últimos 3 meses para estos clientes
         var periodoMinMes = periodos.First().Mes;
         var periodoMinAnio = periodos.First().Anio;
 
         var pagos = await _context.Pagos
+            .AsNoTracking()
             .Where(p => clienteIds.Contains(p.UserId) &&
                         (p.PeriodoAnio > periodoMinAnio ||
                         (p.PeriodoAnio == periodoMinAnio && p.PeriodoMes >= periodoMinMes)))

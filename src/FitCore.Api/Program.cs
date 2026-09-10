@@ -3,10 +3,12 @@ using FitCore.Infrastructure.Persistence;
 using FitCore.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Scalar.AspNetCore;
+using System.IO.Compression;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +20,18 @@ builder.Services.AddControllers()
         )
     );
 builder.Services.AddEndpointsApiExplorer();
+
+// Comprimir las respuestas JSON (la API solo devuelve datos propios, sin
+// contenido reflejado de terceros, así que habilitarlo también en HTTPS
+// es seguro y reduce bastante el tiempo de transferencia en conexiones lentas).
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<BrotliCompressionProvider>();
+    options.Providers.Add<GzipCompressionProvider>();
+});
+builder.Services.Configure<BrotliCompressionProviderOptions>(o => o.Level = CompressionLevel.Fastest);
+builder.Services.Configure<GzipCompressionProviderOptions>(o => o.Level = CompressionLevel.Fastest);
 
 // OpenAPI
 builder.Services.AddOpenApi();
@@ -95,6 +109,7 @@ if (app.Environment.IsDevelopment())
 // orquestador) necesita una ruta propia que no dependa de eso.
 app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
 
+app.UseResponseCompression();
 app.UseCors("FitCorePolicy");
 app.UseHttpsRedirection();
 app.UseAuthentication();

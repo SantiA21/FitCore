@@ -68,14 +68,18 @@ public class DashboardController : ControllerBase
 
         var fechaInicio7 = ultimos7Dias.First();
         var fechaFin7 = hoy.Date.AddDays(1);
+        var fechaInicio7Prev = fechaInicio7.AddDays(-7);
 
-        var pagosUltimos7 = await _context.Pagos
-            .Where(p => p.Fecha >= fechaInicio7 && p.Fecha < fechaFin7)
+        // Un solo round trip para los últimos 14 días (7 actuales + 7
+        // previos para la tendencia), en vez de dos consultas separadas.
+        var pagosUltimas2Semanas = await _context.Pagos
+            .Where(p => p.Fecha >= fechaInicio7Prev && p.Fecha < fechaFin7)
+            .Select(p => new { p.Fecha, p.Monto })
             .ToListAsync();
 
         var serieIngresos = ultimos7Dias.Select(d =>
         {
-            var totalDia = pagosUltimos7
+            var totalDia = pagosUltimas2Semanas
                 .Where(p => p.Fecha.Date == d)
                 .Sum(p => p.Monto);
 
@@ -90,10 +94,9 @@ public class DashboardController : ControllerBase
         var totalSemana = serieIngresos.Sum(s => s.monto);
 
         // Ingresos de los 7 días anteriores para calcular tendencia porcentual
-        var fechaInicio7Prev = fechaInicio7.AddDays(-7);
-        var pagos7Prev = await _context.Pagos
+        var pagos7Prev = pagosUltimas2Semanas
             .Where(p => p.Fecha >= fechaInicio7Prev && p.Fecha < fechaInicio7)
-            .SumAsync(p => (decimal?)p.Monto) ?? 0m;
+            .Sum(p => p.Monto);
 
         int porcentajeCrecimiento = 0;
         if (pagos7Prev > 0)
@@ -108,6 +111,7 @@ public class DashboardController : ControllerBase
         // 6. Próximos vencimientos de membresía (en los próximos 10 días)
         var limiteVencimiento = hoy.AddDays(10);
         var proximosVencimientos = await _context.Membresias
+            .AsNoTracking()
             .Include(m => m.User)
             .Include(m => m.Plan)
             .Where(m => m.Activa && m.FechaFin >= hoy && m.FechaFin <= limiteVencimiento)

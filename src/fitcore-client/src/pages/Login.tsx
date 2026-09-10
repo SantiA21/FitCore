@@ -12,6 +12,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [tardando, setTardando] = useState(false);
   const { login, isAuthenticated, isCliente } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -23,6 +24,12 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setTardando(false);
+
+    // El backend (plan gratuito) se duerme tras un rato sin uso y tarda unos
+    // segundos en despertar en la primera request — avisamos para que no
+    // parezca que la app se colgó.
+    const avisoTardanza = setTimeout(() => setTardando(true), 4000);
 
     try {
       const res = await apiFetch("/api/auth/login", {
@@ -53,7 +60,9 @@ export default function Login() {
         description: err instanceof Error ? err.message : "Intentá nuevamente.",
       });
     } finally {
+      clearTimeout(avisoTardanza);
       setLoading(false);
+      setTardando(false);
     }
   };
 
@@ -96,6 +105,11 @@ export default function Login() {
           <Button type="submit" className="w-full mt-2" loading={loading}>
             {loading ? "Ingresando..." : "Iniciar sesión"}
           </Button>
+          {tardando && (
+            <p className="text-center text-xs text-[#888] animate-fade-in-up">
+              El servidor estaba inactivo y está despertando, puede tardar unos segundos…
+            </p>
+          )}
         </form>
 
         <p className="text-center text-sm text-[#888] mt-6">

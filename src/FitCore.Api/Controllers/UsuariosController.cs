@@ -35,6 +35,7 @@ public class UsuariosController : ControllerBase
 
         var hoy = DateTime.UtcNow;
         var mem = await _context.Membresias
+            .AsNoTracking()
             .Include(m => m.Plan)
             .Where(m => m.UserId == userId && m.Activa && m.FechaFin >= hoy)
             .FirstOrDefaultAsync();
@@ -103,7 +104,7 @@ public class UsuariosController : ControllerBase
         [FromQuery] Categoria? categoria = null,
         [FromQuery] bool? activo = null)
     {
-        var query = _userManager.Users.AsQueryable();
+        var query = _userManager.Users.AsNoTracking().AsQueryable();
 
         if (categoria.HasValue)
             query = query.Where(u => u.Categoria == categoria.Value);
@@ -118,6 +119,7 @@ public class UsuariosController : ControllerBase
         var userIds = usuarios.Select(u => u.Id).ToList();
 
         var membresiasActivas = await _context.Membresias
+            .AsNoTracking()
             .Include(m => m.Plan)
             .Where(m => userIds.Contains(m.UserId) && m.Activa && m.FechaFin >= hoy)
             .ToListAsync();
@@ -140,6 +142,7 @@ public class UsuariosController : ControllerBase
 
         var hoy = DateTime.UtcNow;
         var mem = await _context.Membresias
+            .AsNoTracking()
             .Include(m => m.Plan)
             .Where(m => m.UserId == id && m.Activa && m.FechaFin >= hoy)
             .FirstOrDefaultAsync();

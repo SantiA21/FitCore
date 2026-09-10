@@ -48,14 +48,25 @@ public class MovimientosFinancierosController : ControllerBase
         var hoy = DateTime.UtcNow;
         var inicioMes = new DateOnly(hoy.Year, hoy.Month, 1);
         var finMes = inicioMes.AddMonths(1).AddDays(-1);
+        var inicioRango = inicioMes.AddMonths(-5); // cubre los últimos 6 meses (incluye el actual)
+        var inicioRangoDt = DateTime.SpecifyKind(inicioRango.ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc);
+        var finRangoDt = DateTime.SpecifyKind(finMes.ToDateTime(TimeOnly.MaxValue), DateTimeKind.Utc);
 
-        var movimientosMes = await _context.MovimientosFinancieros
-            .Where(m => m.Fecha >= inicioMes && m.Fecha <= finMes)
+        // Un solo viaje a la base por tabla para cubrir los 6 meses, en vez de
+        // 2 queries por mes (12 round trips) — se agrupa en memoria sobre el
+        // set ya filtrado y acotado, que es chico. No se paralelizan entre sí
+        // porque comparten el mismo DbContext (no es thread-safe para
+        // operaciones concurrentes).
+        var movimientosRango = await _context.MovimientosFinancieros
+            .Where(m => m.Fecha >= inicioRango && m.Fecha <= finMes)
+            .ToListAsync();
+        var pagosRango = await _context.Pagos
+            .Where(p => p.Fecha >= inicioRangoDt && p.Fecha <= finRangoDt)
+            .Select(p => new { p.Fecha, p.Monto })
             .ToListAsync();
 
-        var cuotasMes = await _context.Pagos
-            .Where(p => p.Fecha.Month == hoy.Month && p.Fecha.Year == hoy.Year)
-            .SumAsync(p => (decimal?)p.Monto) ?? 0m;
+        var movimientosMes = movimientosRango.Where(m => m.Fecha >= inicioMes && m.Fecha <= finMes).ToList();
+        var cuotasMes = pagosRango.Where(p => p.Fecha.Month == hoy.Month && p.Fecha.Year == hoy.Year).Sum(p => p.Monto);
 
         decimal ingresosVarios = movimientosMes.Where(m => m.Tipo == TipoMovimiento.Ingreso).Sum(m => m.Monto);
         decimal egresos = movimientosMes.Where(m => m.Tipo == TipoMovimiento.Egreso).Sum(m => m.Monto);
@@ -68,15 +79,14 @@ public class MovimientosFinancierosController : ControllerBase
         for (int i = 5; i >= 0; i--)
         {
             var mesRef = new DateOnly(hoy.Year, hoy.Month, 1).AddMonths(-i);
-            var finMesRef = mesRef.AddMonths(1).AddDays(-1);
 
-            var cuotasDelMes = await _context.Pagos
+            var cuotasDelMes = pagosRango
                 .Where(p => p.Fecha.Month == mesRef.Month && p.Fecha.Year == mesRef.Year)
-                .SumAsync(p => (decimal?)p.Monto) ?? 0m;
+                .Sum(p => p.Monto);
 
-            var movsDelMes = await _context.MovimientosFinancieros
-                .Where(m => m.Fecha >= mesRef && m.Fecha <= finMesRef)
-                .ToListAsync();
+            var movsDelMes = movimientosRango
+                .Where(m => m.Fecha.Month == mesRef.Month && m.Fecha.Year == mesRef.Year)
+                .ToList();
 
             var ingresosDelMes = cuotasDelMes + movsDelMes.Where(m => m.Tipo == TipoMovimiento.Ingreso).Sum(m => m.Monto);
             var egresosDelMes = movsDelMes.Where(m => m.Tipo != TipoMovimiento.Ingreso).Sum(m => m.Monto);
