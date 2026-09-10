@@ -8,6 +8,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import logoIcon from "@/assets/brand/fitcore-icon.png";
 
 interface NavItem {
   label: string;
@@ -116,8 +117,10 @@ export default function Sidebar() {
       >
         {/* Logo + cerrar (mobile) */}
         <div className={cn("border-b border-[#f0f0f0] flex items-center", collapsed ? "justify-center p-4" : "justify-between p-5")}>
-          {!collapsed && <h1 className="text-lg font-bold text-black">FitCore</h1>}
-          {collapsed && <span className="text-lg font-black text-orange-600">F</span>}
+          <div className="flex items-center gap-2 min-w-0">
+            <img src={logoIcon} alt="FitCore" className="h-8 w-8 object-contain shrink-0" />
+            {!collapsed && <h1 className="text-lg font-bold text-black truncate">FitCore</h1>}
+          </div>
           <button onClick={() => setMobileOpen(false)} className="md:hidden text-gray-400" aria-label="Cerrar menú">
             <X className="h-4 w-4" />
           </button>

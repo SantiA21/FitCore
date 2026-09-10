@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
+import logoFull from "@/assets/brand/fitcore-logo-full.png";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -56,9 +57,9 @@ export default function Login() {
     <div className="min-h-screen bg-[#f9f9f9] flex items-center justify-center">
       <div className="bg-white border border-[#f0f0f0] rounded-xl p-8 w-full max-w-sm shadow-sm">
         {/* Logo */}
-        <div className="mb-8">
-          <h1 className="text-xl font-bold text-black">FitCore</h1>
-          <p className="text-sm text-[#888] mt-1">Iniciá sesión para continuar</p>
+        <div className="mb-8 flex flex-col items-center text-center">
+          <img src={logoFull} alt="FitCore" className="h-24 w-auto object-contain" />
+          <p className="text-sm text-[#888] mt-3">Iniciá sesión para continuar</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
