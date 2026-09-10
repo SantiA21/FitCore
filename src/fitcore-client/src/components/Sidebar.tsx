@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import {
   LayoutDashboard, Users, CreditCard, Calendar, User, LogOut,
   ClipboardList, ShieldCheck, TrendingUp, Menu, X,
-  PanelLeftClose, PanelLeftOpen,
+  PanelLeftClose, PanelLeftOpen, Wallet, FileSpreadsheet,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -22,6 +22,8 @@ const adminNavItems: NavItem[] = [
   { label: "Pagos", icon: CreditCard, path: "/pagos" },
   { label: "Estado de cuenta", icon: ShieldCheck, path: "/estado-cuenta" },
   { label: "Asistencias", icon: Calendar, path: "/asistencias" },
+  { label: "Contabilidad", icon: Wallet, path: "/contabilidad" },
+  { label: "Reportes", icon: FileSpreadsheet, path: "/reportes" },
 ];
 
 const clienteNavItems: NavItem[] = [

@@ -18,6 +18,8 @@ import MisAsistencias from "./pages/MisAsistencias";
 import MiPerfil from "./pages/MiPerfil";
 import MiProgreso from "./pages/MiProgreso";
 import ClienteProgreso from "./pages/ClienteProgreso";
+import Contabilidad from "./pages/Contabilidad";
+import Reportes from "./pages/Reportes";
 
 function App() {
   return (
@@ -67,6 +69,16 @@ function App() {
           <Route path="/clientes/:userId/progreso" element={
             <ProtectedRoute allowedCategorias={["Admin", "Entrenador"]}>
               <Layout><ClienteProgreso /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/contabilidad" element={
+            <ProtectedRoute allowedCategorias={["Admin", "Entrenador"]}>
+              <Layout><Contabilidad /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/reportes" element={
+            <ProtectedRoute allowedCategorias={["Admin", "Entrenador"]}>
+              <Layout><Reportes /></Layout>
             </ProtectedRoute>
           } />
 
