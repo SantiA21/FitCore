@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, CreditCard, Calendar, User, LogOut, ClipboardList, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Users, CreditCard, Calendar, User, LogOut, ClipboardList, ShieldCheck, TrendingUp } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
@@ -22,6 +22,7 @@ const clienteNavItems: NavItem[] = [
   { label: "Inicio", icon: LayoutDashboard, path: "/dashboard-cliente" },
   { label: "Mi Membresía", icon: CreditCard, path: "/mi-membresia" },
   { label: "Mis Asistencias", icon: Calendar, path: "/mis-asistencias" },
+  { label: "Mi Progreso", icon: TrendingUp, path: "/mi-progreso" },
   { label: "Mi Perfil", icon: User, path: "/mi-perfil" },
 ];
 

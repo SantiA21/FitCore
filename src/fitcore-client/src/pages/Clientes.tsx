@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Plus, Pencil, UserX, UserCheck, Trash2, CalendarX } from "lucide-react";
+import { Search, Plus, Pencil, UserX, UserCheck, Trash2, CalendarX, TrendingUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -415,6 +415,21 @@ export default function Clientes() {
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>Editar</TooltipContent>
+                        </Tooltip>
+
+                        {/* Ver progreso */}
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button" variant="ghost" size="icon"
+                              className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              onClick={() => navigate(`/clientes/${c.id}/progreso`)}
+                              aria-label="Ver progreso"
+                            >
+                              <TrendingUp className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Progreso y rutina</TooltipContent>
                         </Tooltip>
 
                         {/* Activar / Desactivar */}

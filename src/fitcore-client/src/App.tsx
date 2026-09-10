@@ -16,6 +16,8 @@ import EstadoCuenta from "./pages/EstadoCuenta";
 import DashboardCliente from "./pages/DashboardCliente";
 import MisAsistencias from "./pages/MisAsistencias";
 import MiPerfil from "./pages/MiPerfil";
+import MiProgreso from "./pages/MiProgreso";
+import ClienteProgreso from "./pages/ClienteProgreso";
 
 function App() {
   return (
@@ -62,6 +64,11 @@ function App() {
               <Layout><PlanesAdmin /></Layout>
             </ProtectedRoute>
           } />
+          <Route path="/clientes/:userId/progreso" element={
+            <ProtectedRoute allowedCategorias={["Admin", "Entrenador"]}>
+              <Layout><ClienteProgreso /></Layout>
+            </ProtectedRoute>
+          } />
 
           {/* Rutas Cliente */}
           <Route path="/dashboard-cliente" element={
@@ -82,6 +89,11 @@ function App() {
           <Route path="/mi-perfil" element={
             <ProtectedRoute allowedCategorias={["Cliente"]}>
               <Layout><MiPerfil /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/mi-progreso" element={
+            <ProtectedRoute allowedCategorias={["Cliente"]}>
+              <Layout><MiProgreso /></Layout>
             </ProtectedRoute>
           } />
 
