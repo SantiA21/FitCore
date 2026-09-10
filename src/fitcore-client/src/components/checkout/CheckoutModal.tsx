@@ -124,7 +124,6 @@ const TEST_CARDS = [
     titular: "APRO PEREZ",
     vencimiento: "12/28",
     cvv: "123",
-    dni: "38123456",
     color: "border-blue-300 text-blue-700 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800",
   },
   {
@@ -133,7 +132,6 @@ const TEST_CARDS = [
     titular: "APRO GOMEZ",
     vencimiento: "10/29",
     cvv: "456",
-    dni: "35987654",
     color: "border-orange-300 text-orange-700 bg-orange-50 hover:bg-orange-100 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-800",
   },
   {
@@ -142,7 +140,6 @@ const TEST_CARDS = [
     titular: "JUAN RECHAZADO",
     vencimiento: "05/30",
     cvv: "999",
-    dni: "40111222",
     color: "border-red-300 text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800",
   },
 ];
@@ -180,7 +177,6 @@ export default function CheckoutModal({
     titular: "",
     vencimiento: "",
     cvv: "",
-    dni: "",
   });
 
   // Estado formulario transferencia
@@ -205,7 +201,6 @@ export default function CheckoutModal({
       titular: preset.titular,
       vencimiento: preset.vencimiento,
       cvv: preset.cvv,
-      dni: preset.dni,
     });
     toast({
       title: `Tarjeta cargada: ${preset.label}`,
@@ -353,15 +348,16 @@ export default function CheckoutModal({
     if (!plan) return;
     setLoading(true);
     try {
+      // Solo viajan los últimos 4 dígitos y la franquicia: el número completo,
+      // el CVV y el DNI nunca salen del navegador.
       const res = await apiFetch("/api/pagos-cliente/confirmar-tarjeta", {
         method: "POST",
         body: JSON.stringify({
           planId: plan.id,
-          numeroTarjeta: cleanNum,
+          ultimos4: cleanNum.slice(-4),
+          franquicia: cardBrand.name,
           titular: tarjeta.titular.trim(),
           vencimiento: tarjeta.vencimiento,
-          cvv: tarjeta.cvv,
-          dni: tarjeta.dni.trim() || null,
         }),
       });
 
@@ -689,7 +685,7 @@ export default function CheckoutModal({
                   />
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="tarjeta-venc" className="text-xs font-semibold text-gray-700">
                       Vence
@@ -725,20 +721,6 @@ export default function CheckoutModal({
                       placeholder="123"
                       value={tarjeta.cvv}
                       onChange={(e) => setTarjeta((p) => ({ ...p, cvv: e.target.value.replace(/\D/g, "") }))}
-                      disabled={loading}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label htmlFor="tarjeta-dni" className="text-xs font-semibold text-gray-700">
-                      DNI Titular
-                    </Label>
-                    <Input
-                      id="tarjeta-dni"
-                      placeholder="38123456"
-                      value={tarjeta.dni}
-                      onChange={(e) => setTarjeta((p) => ({ ...p, dni: e.target.value.replace(/\D/g, "") }))}
                       disabled={loading}
                       required
                     />

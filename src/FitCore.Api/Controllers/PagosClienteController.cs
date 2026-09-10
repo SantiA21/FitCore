@@ -107,12 +107,9 @@ public class PagosClienteController : ControllerBase
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-        var cleanNumber = dto.NumeroTarjeta.Replace(" ", "").Trim();
-        if (cleanNumber.Length < 13 || cleanNumber.Length > 19 || !cleanNumber.All(char.IsDigit))
-            return BadRequest(new { mensaje = "El número de tarjeta es inválido." });
-
-        if (!IsValidLuhn(cleanNumber))
-            return BadRequest(new { mensaje = "El número de tarjeta no es válido (no supera el algoritmo de verificación bancaria Luhn)." });
+        var ultimos4 = dto.Ultimos4?.Trim() ?? "";
+        if (ultimos4.Length != 4 || !ultimos4.All(char.IsDigit))
+            return BadRequest(new { mensaje = "Los últimos 4 dígitos de la tarjeta son inválidos." });
 
         if (string.IsNullOrWhiteSpace(dto.Titular))
             return BadRequest(new { mensaje = "El nombre del titular es obligatorio." });
@@ -132,17 +129,13 @@ public class PagosClienteController : ControllerBase
         if (anioCompleto < hoy.Year || (anioCompleto == hoy.Year && mes < hoy.Month))
             return BadRequest(new { mensaje = "La tarjeta se encuentra vencida." });
 
-        if (string.IsNullOrWhiteSpace(dto.Cvv) || dto.Cvv.Length < 3)
-            return BadRequest(new { mensaje = "El código de seguridad (CVV) es inválido." });
-
         var plan = await _context.Planes.FirstOrDefaultAsync(p => p.Id == dto.PlanId);
         if (plan is null) return NotFound(new { mensaje = "Plan no encontrado." });
 
         // Activamos membresía
         var membresiaRes = await _membresiaService.Crear(userId, plan.Id);
 
-        var ultimos4 = cleanNumber.Length >= 4 ? cleanNumber[^4..] : cleanNumber;
-        var franquicia = DetectarFranquicia(cleanNumber);
+        var franquicia = string.IsNullOrWhiteSpace(dto.Franquicia) ? "Tarjeta" : dto.Franquicia.Trim();
 
         var pago = new Pago
         {
@@ -151,7 +144,7 @@ public class PagosClienteController : ControllerBase
             Monto = plan.Precio,
             Fecha = hoy,
             Metodo = $"Tarjeta ({franquicia})",
-            Nota = $"{franquicia} terminada en {ultimos4} - Titular: {dto.Titular.Trim()} (DNI: {dto.Dni?.Trim()})",
+            Nota = $"{franquicia} terminada en {ultimos4} - Titular: {dto.Titular.Trim()}",
             PeriodoMes = hoy.Month,
             PeriodoAnio = hoy.Year,
         };
@@ -241,38 +234,4 @@ public class PagosClienteController : ControllerBase
         return Ok(dtos);
     }
 
-    private static bool IsValidLuhn(string number)
-    {
-        if (string.IsNullOrWhiteSpace(number) || !number.All(char.IsDigit)) return false;
-        if (number.Length < 13 || number.Length > 19) return false;
-
-        int sum = 0;
-        bool shouldDouble = false;
-
-        for (int i = number.Length - 1; i >= 0; i--)
-        {
-            int digit = number[i] - '0';
-            if (shouldDouble)
-            {
-                digit *= 2;
-                if (digit > 9) digit -= 9;
-            }
-            sum += digit;
-            shouldDouble = !shouldDouble;
-        }
-
-        return sum % 10 == 0;
-    }
-
-    private static string DetectarFranquicia(string number)
-    {
-        if (number.StartsWith("4")) return "Visa";
-        if (number.StartsWith("34") || number.StartsWith("37")) return "American Express";
-        if (number.StartsWith("51") || number.StartsWith("52") || number.StartsWith("53") ||
-            number.StartsWith("54") || number.StartsWith("55") ||
-            (number.Length >= 4 && int.TryParse(number[..4], out int bin) && bin >= 2221 && bin <= 2720))
-            return "Mastercard";
-        if (number.StartsWith("589657") || number.StartsWith("6042") || number.StartsWith("6043")) return "Cabal";
-        return "Tarjeta";
-    }
 }

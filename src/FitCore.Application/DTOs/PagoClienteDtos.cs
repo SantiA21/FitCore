@@ -22,11 +22,10 @@ public record ConfirmarMercadoPagoDto(
 
 public record ConfirmarPagoTarjetaDto(
     int PlanId,
-    string NumeroTarjeta,
+    string Ultimos4,
+    string Franquicia,
     string Titular,
-    string Vencimiento,
-    string Cvv,
-    string Dni
+    string Vencimiento
 );
 
 public record ConfirmarPagoTransferenciaDto(
