@@ -320,9 +320,13 @@ export default function Asistencias() {
                       month: "long",
                     })}
                   </h2>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {loadingDia ? "Cargando..." : `${asistenciasDia.length} asistencia${asistenciasDia.length !== 1 ? "s" : ""}`}
-                  </p>
+                  {loadingDia ? (
+                    <Skeleton className="h-3 w-20 rounded mt-1" />
+                  ) : (
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {`${asistenciasDia.length} asistencia${asistenciasDia.length !== 1 ? "s" : ""}`}
+                    </p>
+                  )}
                 </div>
                 <Button
                   size="sm"
@@ -351,10 +355,11 @@ export default function Asistencias() {
                     No hay asistencias registradas para este día
                   </div>
                 ) : (
-                  asistenciasDia.map((a) => (
+                  asistenciasDia.map((a, i) => (
                     <div
                       key={a.id}
-                      className="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
+                      className="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors animate-fade-in-up"
+                      style={{ animationDelay: `${Math.min(i, 10) * 30}ms` }}
                     >
                       <div>
                         <p className="text-sm font-medium text-black">{a.clienteNombre}</p>
@@ -437,7 +442,8 @@ export default function Asistencias() {
             <Button
               type="button"
               onClick={handleRegistrar}
-              disabled={saving || !formClienteId}
+              disabled={!formClienteId}
+              loading={saving}
             >
               {saving ? "Guardando..." : "Registrar"}
             </Button>

@@ -160,10 +160,10 @@ export default function Reportes() {
         <Button
           type="button"
           onClick={handleExportar}
-          disabled={exportando}
+          loading={exportando}
           className="sm:ml-auto rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs h-9 px-4"
         >
-          <Download className="w-3.5 h-3.5 mr-1.5" />
+          {!exportando && <Download className="w-3.5 h-3.5 mr-1.5" />}
           {exportando ? "Generando..." : "Exportar a Excel"}
         </Button>
       </div>
@@ -174,14 +174,18 @@ export default function Reportes() {
           <div className="p-5 space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-10 w-full rounded-lg" />)}</div>
         ) : !datosActuales ? (
           <p className="text-sm text-gray-400 text-center py-10">No se pudo cargar el reporte.</p>
-        ) : tipo === "ingresos" ? (
-          <ReporteIngresos datos={datosActuales} />
-        ) : tipo === "morosidad" ? (
-          <ReporteMorosidad datos={datosActuales} />
-        ) : tipo === "ocupacion" ? (
-          <ReporteOcupacion datos={datosActuales} />
         ) : (
-          <ReporteContable datos={datosActuales} />
+          <div key={tipo} className="animate-fade-in-up">
+            {tipo === "ingresos" ? (
+              <ReporteIngresos datos={datosActuales} />
+            ) : tipo === "morosidad" ? (
+              <ReporteMorosidad datos={datosActuales} />
+            ) : tipo === "ocupacion" ? (
+              <ReporteOcupacion datos={datosActuales} />
+            ) : (
+              <ReporteContable datos={datosActuales} />
+            )}
+          </div>
         )}
       </div>
     </div>

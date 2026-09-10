@@ -73,7 +73,7 @@ export default function MiProgreso() {
   }
 
   return (
-    <div className="space-y-8 max-w-5xl">
+    <div className="space-y-8 max-w-5xl animate-fade-in-up">
       <div>
         <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight flex items-center gap-3">
           <TrendingUp className="w-8 h-8 text-orange-600" /> Mi Progreso

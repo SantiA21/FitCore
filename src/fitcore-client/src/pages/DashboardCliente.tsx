@@ -214,9 +214,13 @@ export default function DashboardCliente() {
           </div>
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Asistencias del Mes</p>
-            <p className="text-2xl font-black text-gray-900 mt-0.5">
-              {loading ? "..." : asistenciasMes.length} <span className="text-xs font-medium text-gray-500">visitas</span>
-            </p>
+            {loading ? (
+              <Skeleton className="h-7 w-16 rounded mt-0.5" />
+            ) : (
+              <p className="text-2xl font-black text-gray-900 mt-0.5 animate-fade-in-up">
+                {asistenciasMes.length} <span className="text-xs font-medium text-gray-500">visitas</span>
+              </p>
+            )}
             <p className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1 mt-1">
               <TrendingUp className="w-3.5 h-3.5" /> ¡Excelente constancia!
             </p>
@@ -230,15 +234,15 @@ export default function DashboardCliente() {
           </div>
           <div className="min-w-0">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Último Entrenamiento</p>
-            <p className="text-lg font-bold text-gray-900 mt-0.5 truncate">
-              {loading
-                ? "..."
-                : ultimaAsistencia
-                  ? `${ultimaAsistencia.fecha}`
-                  : "Aún sin registros"}
-            </p>
+            {loading ? (
+              <Skeleton className="h-6 w-24 rounded mt-0.5" />
+            ) : (
+              <p className="text-lg font-bold text-gray-900 mt-0.5 truncate animate-fade-in-up">
+                {ultimaAsistencia ? `${ultimaAsistencia.fecha}` : "Aún sin registros"}
+              </p>
+            )}
             <p className="text-[11px] text-gray-500 mt-1">
-              {ultimaAsistencia ? `Ingreso: ${ultimaAsistencia.horaIngreso.slice(0, 5)} hs` : "¡Vení a entrenar hoy!"}
+              {loading ? "" : ultimaAsistencia ? `Ingreso: ${ultimaAsistencia.horaIngreso.slice(0, 5)} hs` : "¡Vení a entrenar hoy!"}
             </p>
           </div>
         </div>

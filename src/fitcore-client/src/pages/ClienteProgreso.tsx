@@ -174,7 +174,7 @@ export default function ClienteProgreso() {
   }
 
   return (
-    <div className="space-y-8 max-w-5xl">
+    <div className="space-y-8 max-w-5xl animate-fade-in-up">
       <div>
         <button
           onClick={() => navigate("/clientes")}
@@ -234,7 +234,7 @@ export default function ClienteProgreso() {
         </div>
 
         <div className="flex justify-end">
-          <Button type="submit" disabled={guardandoMedicion} className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs h-10 px-5">
+          <Button type="submit" loading={guardandoMedicion} className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs h-10 px-5">
             {guardandoMedicion ? "Guardando..." : "Guardar medición"}
           </Button>
         </div>
@@ -249,8 +249,12 @@ export default function ClienteProgreso() {
           <div className="p-8 text-center text-sm text-gray-400">Todavía no hay mediciones cargadas.</div>
         ) : (
           <div className="divide-y divide-gray-100">
-            {[...mediciones].reverse().map((m) => (
-              <div key={m.id} className="p-4 sm:p-5 flex items-center justify-between hover:bg-gray-50/60">
+            {[...mediciones].reverse().map((m, i) => (
+              <div
+                key={m.id}
+                className="p-4 sm:p-5 flex items-center justify-between hover:bg-gray-50/60 animate-fade-in-up"
+                style={{ animationDelay: `${Math.min(i, 10) * 30}ms` }}
+              >
                 <div className="flex items-center gap-4">
                   <div className="flex -space-x-2">
                     {[m.fotoFrenteBase64, m.fotoPerfilBase64].map((foto, i) =>
@@ -289,8 +293,8 @@ export default function ClienteProgreso() {
             <Dumbbell className="w-5 h-5 text-orange-600" />
             <h2 className="text-base font-bold text-gray-900">Rutina semanal</h2>
           </div>
-          <Button onClick={handleGuardarRutina} disabled={guardandoRutina} className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs h-9 px-4">
-            <Save className="w-3.5 h-3.5 mr-1.5" />
+          <Button onClick={handleGuardarRutina} loading={guardandoRutina} className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs h-9 px-4">
+            {!guardandoRutina && <Save className="w-3.5 h-3.5 mr-1.5" />}
             {guardandoRutina ? "Guardando..." : "Guardar rutina"}
           </Button>
         </div>

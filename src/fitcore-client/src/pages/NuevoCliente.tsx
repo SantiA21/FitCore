@@ -19,7 +19,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 
 type Plan = {
@@ -113,7 +112,7 @@ export default function NuevoCliente() {
   };
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-2xl animate-fade-in-up">
       <Card>
         <CardHeader>
           <CardTitle>Nuevo Cliente</CardTitle>
@@ -195,8 +194,7 @@ export default function NuevoCliente() {
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type="submit" loading={loading}>
               {loading ? "Guardando..." : "Guardar cliente"}
             </Button>
           </CardFooter>

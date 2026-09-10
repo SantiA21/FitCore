@@ -330,7 +330,11 @@ export default function EstadoCuenta() {
             className={`bg-white border rounded-lg p-4 cursor-pointer transition-colors ${item.hover} ${filtroEstado === item.key ? "border-gray-400" : "border-gray-200"}`}
           >
             <p className="text-xs text-gray-500 mb-1">{item.label}</p>
-            <p className={`text-2xl font-bold ${item.color}`}>{item.value}</p>
+            {loading ? (
+              <Skeleton className="h-7 w-10 rounded mt-0.5" />
+            ) : (
+              <p className={`text-2xl font-bold ${item.color} animate-fade-in-up`}>{item.value}</p>
+            )}
           </div>
         ))}
       </div>
@@ -375,10 +379,14 @@ export default function EstadoCuenta() {
                 </TableCell>
               </TableRow>
             ) : (
-              clientesFiltrados.map((c) => {
+              clientesFiltrados.map((c, i) => {
                 const cfg = ESTADO_CONFIG[c.estadoGeneral];
                 return (
-                  <TableRow key={c.userId} className="hover:bg-gray-50">
+                  <TableRow
+                    key={c.userId}
+                    className="hover:bg-gray-50 animate-fade-in-up"
+                    style={{ animationDelay: `${Math.min(i, 10) * 30}ms` }}
+                  >
                     <TableCell>
                       <div>
                         <p className="font-medium text-black">{c.nombre}</p>
@@ -585,7 +593,7 @@ export default function EstadoCuenta() {
             <Button type="button" variant="outline" onClick={() => setModalOpen(false)} disabled={saving}>
               Cancelar
             </Button>
-            <Button type="button" onClick={handleRegistrarPago} disabled={saving}>
+            <Button type="button" onClick={handleRegistrarPago} loading={saving}>
               {saving ? "Registrando..." : "Registrar pago"}
             </Button>
           </DialogFooter>

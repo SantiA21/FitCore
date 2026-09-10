@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const METODOS = ["Efectivo", "Débito", "Crédito", "Transferencia"];
 
@@ -56,6 +58,7 @@ export default function Pagos() {
     periodoAnio: PERIODOS[0].anio,
   });
   const [loading, setLoading] = useState(false);
+  const [pagosLoading, setPagosLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
@@ -75,12 +78,15 @@ export default function Pagos() {
   }
 
   async function fetchPagos() {
+    setPagosLoading(true);
     try {
       const res = await apiFetch("/api/pagos");
       const data = await res.json();
       setPagos(data);
     } catch {
       console.error("Error cargando pagos");
+    } finally {
+      setPagosLoading(false);
     }
   }
 
@@ -173,11 +179,19 @@ export default function Pagos() {
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Recaudado hoy</p>
-          <p className="text-2xl font-semibold text-black">{formatMonto(totalHoy)}</p>
+          {pagosLoading ? (
+            <Skeleton className="h-8 w-28 rounded mt-1" />
+          ) : (
+            <p className="text-2xl font-semibold text-black animate-fade-in-up">{formatMonto(totalHoy)}</p>
+          )}
         </div>
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Recaudado este mes</p>
-          <p className="text-2xl font-semibold text-black">{formatMonto(totalMes)}</p>
+          {pagosLoading ? (
+            <Skeleton className="h-8 w-28 rounded mt-1" />
+          ) : (
+            <p className="text-2xl font-semibold text-black animate-fade-in-up">{formatMonto(totalMes)}</p>
+          )}
         </div>
       </div>
 
@@ -284,8 +298,9 @@ export default function Pagos() {
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="bg-black text-white text-sm font-medium px-5 py-2 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-2 bg-black text-white text-sm font-medium px-5 py-2 rounded-lg hover:bg-gray-800 transition-all active:scale-[0.98] disabled:opacity-50"
           >
+            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             {loading ? "Registrando..." : "Registrar pago"}
           </button>
         </div>
@@ -297,7 +312,13 @@ export default function Pagos() {
           <h2 className="text-base font-semibold text-black">Historial de pagos</h2>
         </div>
 
-        {pagos.length === 0 ? (
+        {pagosLoading ? (
+          <div className="px-6 py-4 space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-10 w-full rounded-lg" />
+            ))}
+          </div>
+        ) : pagos.length === 0 ? (
           <p className="text-sm text-gray-400 px-6 py-8 text-center">
             No hay pagos registrados aún.
           </p>
@@ -315,8 +336,12 @@ export default function Pagos() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {pagos.map((p) => (
-                  <tr key={p.id} className="hover:bg-gray-50 transition-colors">
+                {pagos.map((p, i) => (
+                  <tr
+                    key={p.id}
+                    className="hover:bg-gray-50 transition-colors animate-fade-in-up"
+                    style={{ animationDelay: `${Math.min(i, 12) * 30}ms` }}
+                  >
                     <td className="px-6 py-3 text-black font-medium">{p.clienteNombre}</td>
                     <td className="px-6 py-3 text-gray-600 capitalize">
                       {nombrePeriodo(p.periodoMes, p.periodoAnio)}

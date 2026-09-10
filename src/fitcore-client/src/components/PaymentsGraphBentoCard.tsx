@@ -1,6 +1,7 @@
 import { TrendingUp, TrendingDown, DollarSign } from "lucide-react";
 import BentoCard from "./BentoCard";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type SerieItem = {
   dia: string;
@@ -15,6 +16,7 @@ interface PaymentsGraphBentoCardProps {
   totalSemana?: number;
   totalSemanaFormatted?: string;
   porcentajeCrecimiento?: number;
+  loading?: boolean;
 }
 
 export default function PaymentsGraphBentoCard({
@@ -24,7 +26,32 @@ export default function PaymentsGraphBentoCard({
   totalSemana = 0,
   totalSemanaFormatted,
   porcentajeCrecimiento = 0,
+  loading,
 }: PaymentsGraphBentoCardProps) {
+  if (loading) {
+    return (
+      <BentoCard className={cn("flex flex-col h-full !p-4", className)} delay={delay}>
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2.5">
+            <Skeleton className="h-8 w-8 rounded-lg" />
+            <div className="space-y-1.5">
+              <Skeleton className="h-3.5 w-16 rounded" />
+              <Skeleton className="h-2.5 w-20 rounded" />
+            </div>
+          </div>
+          <Skeleton className="h-5 w-14 rounded-full" />
+        </div>
+        <div className="flex-1 flex flex-col justify-end mt-2">
+          <div className="mb-3 space-y-1.5">
+            <Skeleton className="h-7 w-28 rounded" />
+            <Skeleton className="h-2.5 w-32 rounded" />
+          </div>
+          <Skeleton className="h-14 w-full rounded-xl" />
+        </div>
+      </BentoCard>
+    );
+  }
+
   const montos = serie.map((s) => s.monto);
   const max = Math.max(...montos, 1);
   const count = serie.length > 1 ? serie.length - 1 : 1;

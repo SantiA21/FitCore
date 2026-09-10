@@ -55,7 +55,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-[#f9f9f9] flex items-center justify-center">
-      <div className="bg-white border border-[#f0f0f0] rounded-xl p-8 w-full max-w-sm shadow-sm">
+      <div className="bg-white border border-[#f0f0f0] rounded-xl p-8 w-full max-w-sm shadow-sm animate-scale-in">
         {/* Logo */}
         <div className="mb-8 flex flex-col items-center text-center">
           <img src={logoFull} alt="FitCore" className="h-24 w-auto object-contain" />
@@ -89,7 +89,7 @@ export default function Login() {
             />
           </div>
 
-          <Button type="submit" className="w-full mt-2" disabled={loading}>
+          <Button type="submit" className="w-full mt-2" loading={loading}>
             {loading ? "Ingresando..." : "Iniciar sesión"}
           </Button>
         </form>

@@ -183,7 +183,7 @@ export default function MiPerfil() {
   }
 
   return (
-    <div className="space-y-8 max-w-4xl">
+    <div className="space-y-8 max-w-4xl animate-fade-in-up">
       {/* ── Encabezado ── */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight flex items-center gap-3">
@@ -367,11 +367,11 @@ export default function MiPerfil() {
         <div className="flex justify-end pt-2">
           <Button
             type="submit"
-            disabled={guardando}
+            loading={guardando}
             className="h-11 px-6 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-md shadow-orange-600/20 cursor-pointer"
           >
-            <Save className="w-4 h-4 mr-2" />
-            {guardando ? "Guardando en PostgreSQL..." : "Guardar Cambios"}
+            {!guardando && <Save className="w-4 h-4 mr-2" />}
+            {guardando ? "Guardando..." : "Guardar Cambios"}
           </Button>
         </div>
       </form>

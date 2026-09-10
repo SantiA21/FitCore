@@ -109,9 +109,11 @@ export default function MisAsistencias() {
           </div>
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Este Mes</p>
-            <p className="text-3xl font-black text-gray-900 mt-0.5">
-              {loading ? "..." : asistenciasMes.length}
-            </p>
+            {loading ? (
+              <Skeleton className="h-8 w-10 rounded mt-0.5" />
+            ) : (
+              <p className="text-3xl font-black text-gray-900 mt-0.5 animate-fade-in-up">{asistenciasMes.length}</p>
+            )}
             <p className="text-xs text-gray-500 mt-0.5">días entrenados</p>
           </div>
         </div>
@@ -122,9 +124,11 @@ export default function MisAsistencias() {
           </div>
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Histórico</p>
-            <p className="text-3xl font-black text-gray-900 mt-0.5">
-              {loading ? "..." : asistencias.length}
-            </p>
+            {loading ? (
+              <Skeleton className="h-8 w-10 rounded mt-0.5" />
+            ) : (
+              <p className="text-3xl font-black text-gray-900 mt-0.5 animate-fade-in-up">{asistencias.length}</p>
+            )}
             <p className="text-xs text-gray-500 mt-0.5">visitas registradas</p>
           </div>
         </div>
@@ -135,9 +139,11 @@ export default function MisAsistencias() {
           </div>
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Promedio Semanal</p>
-            <p className="text-3xl font-black text-gray-900 mt-0.5">
-              {loading ? "..." : (asistenciasMes.length / 4).toFixed(1)}
-            </p>
+            {loading ? (
+              <Skeleton className="h-8 w-14 rounded mt-0.5" />
+            ) : (
+              <p className="text-3xl font-black text-gray-900 mt-0.5 animate-fade-in-up">{(asistenciasMes.length / 4).toFixed(1)}</p>
+            )}
             <p className="text-xs text-emerald-600 font-bold mt-0.5">sesiones por semana</p>
           </div>
         </div>
@@ -175,10 +181,11 @@ export default function MisAsistencias() {
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
-            {asistenciasFiltradas.map((item) => (
+            {asistenciasFiltradas.map((item, i) => (
               <div
                 key={item.id}
-                className="p-4 sm:p-5 flex items-center justify-between hover:bg-gray-50/60 transition-colors"
+                className="p-4 sm:p-5 flex items-center justify-between hover:bg-gray-50/60 transition-colors animate-fade-in-up"
+                style={{ animationDelay: `${Math.min(i, 10) * 30}ms` }}
               >
                 <div className="flex items-center gap-4">
                   <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-100 text-orange-600 flex items-center justify-center shrink-0">

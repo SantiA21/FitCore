@@ -346,9 +346,13 @@ export default function Clientes() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">Clientes</h1>
-            <p className="text-sm text-gray-500 font-medium mt-1">
-              {loading ? "Cargando..." : `${clientesFiltrados.length} ${clientesFiltrados.length === 1 ? "cliente" : "clientes"}`}
-            </p>
+            {loading ? (
+              <Skeleton className="h-4 w-24 rounded mt-1.5" />
+            ) : (
+              <p className="text-sm text-gray-500 font-medium mt-1">
+                {`${clientesFiltrados.length} ${clientesFiltrados.length === 1 ? "cliente" : "clientes"}`}
+              </p>
+            )}
           </div>
           <Button onClick={() => navigate("/clientes/nuevo")} className="rounded-xl">
             <Plus className="h-4 w-4 mr-2" />
@@ -380,12 +384,13 @@ export default function Clientes() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-            {clientesFiltrados.map((c) => {
+            {clientesFiltrados.map((c, i) => {
               const d = diasRestantes(c.membresiaVence);
               return (
                 <div
                   key={c.id}
-                  className="bg-white border border-gray-200/80 rounded-2xl p-5 flex flex-col gap-4 hover:border-gray-300 hover:shadow-sm transition-all"
+                  className="bg-white border border-gray-200/80 rounded-2xl p-5 flex flex-col gap-4 hover:border-gray-300 hover:shadow-sm hover:-translate-y-0.5 transition-all animate-fade-in-up"
+                  style={{ animationDelay: `${Math.min(i, 10) * 40}ms` }}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-3 min-w-0">
@@ -608,7 +613,7 @@ export default function Clientes() {
               <Button type="button" variant="outline" onClick={() => setEditOpen(false)} disabled={saving}>
                 Cancelar
               </Button>
-              <Button type="button" onClick={handleSaveEdit} disabled={saving}>
+              <Button type="button" onClick={handleSaveEdit} loading={saving}>
                 {saving ? "Guardando..." : "Guardar"}
               </Button>
             </DialogFooter>
@@ -637,7 +642,7 @@ export default function Clientes() {
               <Button
                 type="button" variant="destructive"
                 onClick={handleConfirmDelete}
-                disabled={deleteLoading}
+                loading={deleteLoading}
               >
                 {deleteLoading ? "Eliminando..." : "Eliminar"}
               </Button>
@@ -717,7 +722,7 @@ export default function Clientes() {
                 type="button"
                 variant="destructive"
                 onClick={handleConfirmarBaja}
-                disabled={procesandoBaja}
+                loading={procesandoBaja}
               >
                 {procesandoBaja ? "Procesando..." : "Confirmar baja"}
               </Button>

@@ -2,6 +2,7 @@ import { User, ArrowUpRight } from "lucide-react";
 import BentoCard from "./BentoCard";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Cliente = {
   id: string | number;
@@ -15,9 +16,10 @@ interface LatestClientsBentoCardProps {
   clientes: Cliente[];
   className?: string;
   delay?: number;
+  loading?: boolean;
 }
 
-export default function LatestClientsBentoCard({ clientes, className, delay }: LatestClientsBentoCardProps) {
+export default function LatestClientsBentoCard({ clientes, className, delay, loading }: LatestClientsBentoCardProps) {
   const navigate = useNavigate();
 
   return (
@@ -34,10 +36,20 @@ export default function LatestClientsBentoCard({ clientes, className, delay }: L
       </div>
 
       <div className="space-y-1 flex-1">
-        {clientes.length === 0 ? (
+        {loading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex items-center justify-between p-1.5">
+              <div className="flex items-center gap-2.5">
+                <Skeleton className="h-6 w-6 rounded-full" />
+                <Skeleton className="h-3 w-24 rounded" />
+              </div>
+              <Skeleton className="h-3 w-8 rounded" />
+            </div>
+          ))
+        ) : clientes.length === 0 ? (
           <p className="text-[10px] text-gray-400 py-4 text-center">Sin clientes registrados</p>
         ) : (
-          clientes.slice(0, 4).map((cliente) => {
+          clientes.slice(0, 4).map((cliente, i) => {
             const fechaStr = cliente.fechaAlta
               ? new Date(cliente.fechaAlta).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" })
               : "";
@@ -45,7 +57,8 @@ export default function LatestClientsBentoCard({ clientes, className, delay }: L
             return (
               <div
                 key={cliente.id}
-                className="flex items-center justify-between p-1.5 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                className="flex items-center justify-between p-1.5 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer animate-fade-in-up"
+                style={{ animationDelay: `${i * 40}ms` }}
                 onClick={() => navigate("/clientes")}
               >
                 <div className="flex items-center gap-2.5">

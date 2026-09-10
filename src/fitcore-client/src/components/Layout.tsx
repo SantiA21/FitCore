@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 
 interface LayoutProps {
@@ -6,11 +7,13 @@ interface LayoutProps {
 }
 
 export default function Layout({ children }: LayoutProps) {
+  const location = useLocation();
+
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
       <main className="flex-1 overflow-y-auto bg-[#fafafa] min-w-0">
-        <div className="p-4 pt-20 md:p-8 h-full">
+        <div key={location.pathname} className="p-4 pt-20 md:p-8 h-full page-transition">
           {children}
         </div>
       </main>

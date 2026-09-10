@@ -253,7 +253,7 @@ export default function Contabilidad() {
           {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-2xl" />)}
         </div>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 animate-fade-in-up">
           <div className={`rounded-2xl p-4 border ${resumen && resumen.balance >= 0 ? "bg-emerald-50 border-emerald-200" : "bg-rose-50 border-rose-200"}`}>
             <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Balance del Mes</p>
             <p className={`text-xl font-black mt-0.5 ${resumen && resumen.balance >= 0 ? "text-emerald-700" : "text-rose-700"}`}>
@@ -280,8 +280,10 @@ export default function Contabilidad() {
       )}
 
       {/* ── Gráfico ingresos vs egresos ── */}
-      {resumen && (
-        <div className="bg-white border border-gray-200/80 rounded-2xl p-5">
+      {loading && !resumen ? (
+        <Skeleton className="h-52 w-full rounded-2xl" />
+      ) : resumen && (
+        <div className="bg-white border border-gray-200/80 rounded-2xl p-5 animate-fade-in-up">
           <h2 className="text-sm font-bold text-gray-900 mb-4">Ingresos vs. Egresos — últimos 6 meses</h2>
           <div className="flex items-end justify-between gap-3 h-32">
             {resumen.serieMensual.map((s, i) => (
@@ -363,7 +365,7 @@ export default function Contabilidad() {
             </div>
           </div>
 
-          <Button type="submit" disabled={guardandoMov} className="w-full rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs h-10">
+          <Button type="submit" loading={guardandoMov} className="w-full rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs h-10">
             {guardandoMov ? "Guardando..." : "Registrar Movimiento"}
           </Button>
         </form>
@@ -399,7 +401,7 @@ export default function Contabilidad() {
             </div>
             <div className="flex gap-2">
               <Input type="date" value={cfFecha} onChange={(e) => setCfFecha(e.target.value)} className="rounded-xl" />
-              <Button type="submit" disabled={guardandoCf} className="rounded-xl bg-black hover:bg-black/90 text-white font-bold text-xs shrink-0 px-4">
+              <Button type="submit" loading={guardandoCf} className="rounded-xl bg-black hover:bg-black/90 text-white font-bold text-xs shrink-0 px-4">
                 Agregar
               </Button>
             </div>
@@ -409,8 +411,12 @@ export default function Contabilidad() {
             {comprasPendientes.length === 0 && comprasResueltas.length === 0 ? (
               <p className="text-xs text-gray-400 text-center py-6">No hay compras futuras planificadas.</p>
             ) : (
-              [...comprasPendientes, ...comprasResueltas].map((c) => (
-                <div key={c.id} className="flex items-center justify-between gap-2 p-2.5 rounded-xl border border-gray-100 hover:bg-gray-50">
+              [...comprasPendientes, ...comprasResueltas].map((c, i) => (
+                <div
+                  key={c.id}
+                  className="flex items-center justify-between gap-2 p-2.5 rounded-xl border border-gray-100 hover:bg-gray-50 animate-fade-in-up"
+                  style={{ animationDelay: `${Math.min(i, 10) * 30}ms` }}
+                >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <p className={`text-xs font-bold text-gray-900 truncate ${c.estado !== "Pendiente" ? "line-through text-gray-400" : ""}`}>
@@ -473,8 +479,12 @@ export default function Contabilidad() {
           <p className="text-sm text-gray-400 text-center py-10">No hay movimientos registrados todavía.</p>
         ) : (
           <div className="divide-y divide-gray-100 max-h-[400px] overflow-y-auto">
-            {movimientos.map((m) => (
-              <div key={m.id} className="p-3.5 flex items-center justify-between gap-3 hover:bg-gray-50/60">
+            {movimientos.map((m, i) => (
+              <div
+                key={m.id}
+                className="p-3.5 flex items-center justify-between gap-3 hover:bg-gray-50/60 animate-fade-in-up"
+                style={{ animationDelay: `${Math.min(i, 12) * 25}ms` }}
+              >
                 <div className="flex items-center gap-3 min-w-0">
                   <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-lg border shrink-0 ${TIPO_COLOR[m.tipo]}`}>
                     {m.tipo}

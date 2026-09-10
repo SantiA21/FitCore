@@ -179,8 +179,12 @@ export default function PlanesAdmin() {
                 </TableCell>
               </TableRow>
             ) : (
-              planes.map((p) => (
-                <TableRow key={p.id} className="hover:bg-gray-50 transition-colors">
+              planes.map((p, i) => (
+                <TableRow
+                  key={p.id}
+                  className="hover:bg-gray-50 transition-colors animate-fade-in-up"
+                  style={{ animationDelay: `${i * 40}ms` }}
+                >
                   <TableCell className="font-medium">{p.nombre}</TableCell>
                   <TableCell>${p.precio.toLocaleString("es-AR")}</TableCell>
                   <TableCell>{p.duracionEnDias} días</TableCell>
@@ -271,7 +275,8 @@ export default function PlanesAdmin() {
             <Button
               type="button"
               onClick={handleSave}
-              disabled={saving || !form.nombre || !form.precio || !form.duracionEnDias}
+              disabled={!form.nombre || !form.precio || !form.duracionEnDias}
+              loading={saving}
             >
               {saving ? "Guardando..." : "Guardar"}
             </Button>
@@ -293,7 +298,7 @@ export default function PlanesAdmin() {
             <Button type="button" variant="outline" onClick={() => setDeleteOpen(false)} disabled={deleteLoading}>
               Cancelar
             </Button>
-            <Button type="button" variant="destructive" onClick={handleDelete} disabled={deleteLoading}>
+            <Button type="button" variant="destructive" onClick={handleDelete} loading={deleteLoading}>
               {deleteLoading ? "Desactivando..." : "Desactivar"}
             </Button>
           </DialogFooter>

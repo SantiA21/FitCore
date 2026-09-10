@@ -124,44 +124,50 @@ export default function Dashboard() {
         <StatTile
           icon={Users}
           color="indigo"
-          value={stats ? stats.clientesActivos : (loading ? "..." : 0)}
+          value={stats ? stats.clientesActivos : 0}
           label="Clientes Activos"
           onClick={() => navigate("/clientes")}
+          loading={loading}
         />
         <StatTile
           icon={UserPlus}
           color="blue"
-          value={loading ? "..." : nuevosEsteMes}
+          value={nuevosEsteMes}
           label="Nuevos este Mes"
           onClick={() => navigate("/clientes")}
+          loading={loading}
         />
         <StatTile
           icon={AlertCircle}
           color="rose"
-          value={stats ? stats.cuotasVencidas : (loading ? "..." : 0)}
+          value={stats ? stats.cuotasVencidas : 0}
           label="Clientes con Deuda"
           onClick={() => navigate("/estado-cuenta")}
+          loading={loading}
         />
         <StatTile
           icon={Clock3}
           color="purple"
-          value={loading ? "..." : porVencer}
+          value={porVencer}
           label="Por Vencer (7 días)"
           onClick={() => navigate("/clientes")}
+          loading={loading}
         />
         <StatTile
           icon={DollarSign}
           color="emerald"
-          value={stats ? stats.ingresosMesFormatted : (loading ? "..." : "$0")}
+          value={stats ? stats.ingresosMesFormatted : "$0"}
           label="Ingresos del Mes"
           onClick={() => navigate("/pagos")}
+          loading={loading}
         />
         <StatTile
           icon={Calendar}
           color="amber"
-          value={stats ? stats.asistenciasHoy : (loading ? "..." : 0)}
+          value={stats ? stats.asistenciasHoy : 0}
           label="Asistencias Hoy"
           onClick={() => navigate("/asistencias")}
+          loading={loading}
         />
       </div>
 
@@ -179,6 +185,7 @@ export default function Dashboard() {
           <PaymentsGraphBentoCard
             className="flex-1"
             delay={150}
+            loading={loading}
             serie={stats?.serieIngresos}
             totalSemana={stats?.totalSemana}
             totalSemanaFormatted={stats?.totalSemanaFormatted}
@@ -197,12 +204,14 @@ export default function Dashboard() {
           <UpcomingSubscriptionsBentoCard
             className="flex-1"
             delay={250}
+            loading={loading}
             vencimientos={stats?.proximosVencimientos}
           />
           <LatestClientsBentoCard
             clientes={ultimosClientes}
             className="flex-1"
             delay={300}
+            loading={loading}
           />
         </div>
       </div>

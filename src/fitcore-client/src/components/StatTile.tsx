@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type StatTileColor = "indigo" | "rose" | "emerald" | "amber" | "blue" | "purple" | "orange";
 
@@ -9,6 +10,7 @@ interface StatTileProps {
   label: string;
   color: StatTileColor;
   onClick?: () => void;
+  loading?: boolean;
 }
 
 const COLOR_MAP: Record<StatTileColor, string> = {
@@ -21,12 +23,24 @@ const COLOR_MAP: Record<StatTileColor, string> = {
   orange: "bg-orange-50 text-orange-600",
 };
 
-export default function StatTile({ icon: Icon, value, label, color, onClick }: StatTileProps) {
+export default function StatTile({ icon: Icon, value, label, color, onClick, loading }: StatTileProps) {
+  if (loading) {
+    return (
+      <div className="bg-white border border-gray-200/80 rounded-2xl p-3.5 shadow-xs flex items-center gap-3">
+        <Skeleton className="w-10 h-10 rounded-xl shrink-0" />
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <Skeleton className="h-2.5 w-16 rounded" />
+          <Skeleton className="h-5 w-10 rounded" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       onClick={onClick}
       className={cn(
-        "bg-white border border-gray-200/80 rounded-2xl p-3.5 shadow-xs flex items-center gap-3",
+        "bg-white border border-gray-200/80 rounded-2xl p-3.5 shadow-xs flex items-center gap-3 animate-fade-in-up",
         onClick && "cursor-pointer hover:border-gray-300 hover:shadow-sm transition-all"
       )}
     >

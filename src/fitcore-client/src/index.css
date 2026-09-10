@@ -169,4 +169,60 @@
   .fade-out-80 {
     animation: fade-out 0.15s ease-in forwards;
   }
+
+  @keyframes shimmer {
+    from {
+      background-position: 150% 0;
+    }
+    to {
+      background-position: -50% 0;
+    }
+  }
+
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes spin-smooth {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .animate-shimmer {
+    background: linear-gradient(90deg, #eef0f2 25%, #f8f9fa 37%, #eef0f2 63%);
+    background-size: 400% 100%;
+    animation: shimmer 1.8s ease-in-out infinite;
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* Transición suave de contenido al cambiar de ruta */
+  .page-transition {
+    animation: fade-in-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
 }

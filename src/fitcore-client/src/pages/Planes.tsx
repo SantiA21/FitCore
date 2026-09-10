@@ -318,16 +318,17 @@ export default function Planes() {
           <p className="text-sm text-gray-400 py-8 text-center">No hay planes disponibles por el momento.</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {planes.map((p) => {
+            {planes.map((p, i) => {
               const esActual = miMembresia?.planId === p.id;
               return (
                 <div
                   key={p.id}
-                  className={`bg-white rounded-3xl p-6 flex flex-col justify-between transition-all duration-200 border ${
+                  className={`bg-white rounded-3xl p-6 flex flex-col justify-between transition-all duration-200 border animate-fade-in-up ${
                     esActual
                       ? "border-orange-500 shadow-md ring-2 ring-orange-500/20"
                       : "border-gray-200 hover:border-gray-300 hover:shadow-lg hover:-translate-y-1"
                   }`}
+                  style={{ animationDelay: `${i * 70}ms` }}
                 >
                   <div>
                     <div className="flex items-center justify-between mb-3">
@@ -403,12 +404,16 @@ export default function Planes() {
         ) : (
           <div className="bg-white border border-gray-200 rounded-3xl overflow-hidden shadow-xs">
             <div className="divide-y divide-gray-100">
-              {misPagos.map((p) => {
+              {misPagos.map((p, i) => {
                 const esMP = p.metodo.toLowerCase().includes("mercado");
                 const esTarjeta = p.metodo.toLowerCase().includes("tarjeta");
 
                 return (
-                  <div key={p.id} className="p-4 sm:p-5 flex items-center justify-between hover:bg-gray-50/70 transition-colors">
+                  <div
+                    key={p.id}
+                    className="p-4 sm:p-5 flex items-center justify-between hover:bg-gray-50/70 transition-colors animate-fade-in-up"
+                    style={{ animationDelay: `${Math.min(i, 10) * 40}ms` }}
+                  >
                     <div className="flex items-center gap-4 min-w-0">
                       <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border ${
                         esMP
@@ -530,7 +535,7 @@ export default function Planes() {
               type="button"
               variant="destructive"
               onClick={handleConfirmarBajaMiMembresia}
-              disabled={cancelando}
+              loading={cancelando}
               className="rounded-xl"
             >
               {cancelando ? "Cancelando..." : "Confirmar cancelación"}
