@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { TrendingUp, TrendingDown, Minus, Dumbbell, Camera, ImageOff, Scale } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ErrorState } from "@/components/ui/error-state";
 
 interface Medicion {
   id: number;
@@ -28,18 +29,25 @@ export default function MiProgreso() {
   const [mediciones, setMediciones] = useState<Medicion[]>([]);
   const [rutina, setRutina] = useState<RutinaDia[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  useEffect(() => {
+  const cargar = () => {
     setLoading(true);
+    setError(false);
     Promise.all([
-      apiFetch("/api/mediciones/mis-mediciones").then((r) => (r.ok ? r.json() : [])),
-      apiFetch("/api/rutinas/mi-rutina").then((r) => (r.ok ? r.json() : [])),
+      apiFetch("/api/mediciones/mis-mediciones").then((r) => (r.ok ? r.json() : Promise.reject())),
+      apiFetch("/api/rutinas/mi-rutina").then((r) => (r.ok ? r.json() : Promise.reject())),
     ])
       .then(([m, r]) => {
         setMediciones(m);
         setRutina(r);
       })
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    cargar();
   }, []);
 
   const hoyDia = new Date().getDay();
@@ -68,6 +76,14 @@ export default function MiProgreso() {
       <div className="space-y-6 max-w-5xl">
         <Skeleton className="h-12 w-64 rounded-2xl" />
         <Skeleton className="h-64 w-full rounded-3xl" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-5xl">
+        <ErrorState message="No se pudo cargar tu progreso. Puede ser un problema de conexión." onRetry={cargar} />
       </div>
     );
   }

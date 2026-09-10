@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ErrorState } from "@/components/ui/error-state";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -59,6 +60,7 @@ export default function Reportes() {
   const [desde, setDesde] = useState(haceDiasISO(30));
   const [hasta, setHasta] = useState(hoyISO());
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [exportando, setExportando] = useState(false);
   // Los datos van etiquetados con el tipo que los pidió: al cambiar de pestaña,
   // React puede renderizar un frame con el "tipo" ya nuevo pero los datos del
@@ -72,11 +74,13 @@ export default function Reportes() {
 
   const cargar = () => {
     setLoading(true);
+    setError(false);
     const tipoAlPedir = tipo;
     const query = usaRango ? `?desde=${desde}&hasta=${hasta}` : "";
     apiFetch(`/api/reportes/${tipo}${query}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((payload) => setDatos(payload ? { tipo: tipoAlPedir, payload } : null))
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((payload) => setDatos({ tipo: tipoAlPedir, payload }))
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
   };
 
@@ -172,6 +176,8 @@ export default function Reportes() {
       <div className="bg-white border border-gray-200/80 rounded-2xl overflow-hidden">
         {loading ? (
           <div className="p-5 space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-10 w-full rounded-lg" />)}</div>
+        ) : error ? (
+          <ErrorState message="No se pudo cargar el reporte. Puede ser un problema de conexión." onRetry={cargar} />
         ) : !datosActuales ? (
           <p className="text-sm text-gray-400 text-center py-10">No se pudo cargar el reporte.</p>
         ) : (

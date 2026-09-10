@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ErrorState } from "@/components/ui/error-state";
 import { useToast } from "@/components/ui/use-toast";
 
 interface Medicion {
@@ -53,6 +54,7 @@ export default function ClienteProgreso() {
   const [mediciones, setMediciones] = useState<Medicion[]>([]);
   const [rutina, setRutina] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [guardandoRutina, setGuardandoRutina] = useState(false);
 
   // Form nueva medición
@@ -63,22 +65,29 @@ export default function ClienteProgreso() {
   const [fotoPerfil, setFotoPerfil] = useState<string | null>(null);
   const [guardandoMedicion, setGuardandoMedicion] = useState(false);
 
-  useEffect(() => {
+  const cargar = () => {
     if (!userId) return;
     setLoading(true);
+    setError(false);
     Promise.all([
-      apiFetch(`/api/usuarios/${userId}`).then((r) => (r.ok ? r.json() : null)),
-      apiFetch(`/api/mediciones/cliente/${userId}`).then((r) => (r.ok ? r.json() : [])),
-      apiFetch(`/api/rutinas/cliente/${userId}`).then((r) => (r.ok ? r.json() : [])),
+      apiFetch(`/api/usuarios/${userId}`).then((r) => (r.ok ? r.json() : Promise.reject())),
+      apiFetch(`/api/mediciones/cliente/${userId}`).then((r) => (r.ok ? r.json() : Promise.reject())),
+      apiFetch(`/api/rutinas/cliente/${userId}`).then((r) => (r.ok ? r.json() : Promise.reject())),
     ])
-      .then(([c, m, r]: [ClienteBasico | null, Medicion[], RutinaDia[]]) => {
+      .then(([c, m, r]: [ClienteBasico, Medicion[], RutinaDia[]]) => {
         setCliente(c);
         setMediciones(m);
         const mapa: Record<number, string> = {};
         r.forEach((d) => (mapa[d.diaSemana] = d.descripcion));
         setRutina(mapa);
       })
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    cargar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   const handleFoto = async (
@@ -169,6 +178,20 @@ export default function ClienteProgreso() {
       <div className="space-y-6 max-w-5xl">
         <Skeleton className="h-12 w-64 rounded-2xl" />
         <Skeleton className="h-64 w-full rounded-3xl" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-5xl">
+        <button
+          onClick={() => navigate("/clientes")}
+          className="text-xs font-semibold text-gray-500 hover:text-gray-800 flex items-center gap-1.5 mb-3 cursor-pointer"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" /> Volver a Clientes
+        </button>
+        <ErrorState message="No se pudo cargar el progreso de este cliente. Puede ser un problema de conexión." onRetry={cargar} />
       </div>
     );
   }

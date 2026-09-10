@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ErrorState } from "@/components/ui/error-state";
 import { useToast } from "@/components/ui/use-toast";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -80,6 +81,7 @@ export default function Contabilidad() {
   const [movimientos, setMovimientos] = useState<Movimiento[]>([]);
   const [comprasFuturas, setComprasFuturas] = useState<CompraFutura[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [filtroTipo, setFiltroTipo] = useState<string>("todos");
 
   // Form nuevo movimiento
@@ -101,16 +103,18 @@ export default function Contabilidad() {
 
   const cargarTodo = () => {
     setLoading(true);
+    setError(false);
     Promise.all([
-      apiFetch("/api/movimientos/resumen").then((r) => (r.ok ? r.json() : null)),
-      apiFetch(`/api/movimientos${filtroTipo !== "todos" ? `?tipo=${filtroTipo}` : ""}`).then((r) => (r.ok ? r.json() : [])),
-      apiFetch("/api/compras-futuras").then((r) => (r.ok ? r.json() : [])),
+      apiFetch("/api/movimientos/resumen").then((r) => (r.ok ? r.json() : Promise.reject())),
+      apiFetch(`/api/movimientos${filtroTipo !== "todos" ? `?tipo=${filtroTipo}` : ""}`).then((r) => (r.ok ? r.json() : Promise.reject())),
+      apiFetch("/api/compras-futuras").then((r) => (r.ok ? r.json() : Promise.reject())),
     ])
       .then(([res, movs, compras]) => {
         setResumen(res);
         setMovimientos(movs);
         setComprasFuturas(compras);
       })
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
   };
 
@@ -246,6 +250,10 @@ export default function Contabilidad() {
           Ingresos, egresos, inversiones y compras del gimnasio — todo en un solo lugar.
         </p>
       </div>
+
+      {error && !loading && (
+        <ErrorState compact message="No se pudieron cargar los datos contables. Puede ser un problema de conexión." onRetry={cargarTodo} />
+      )}
 
       {/* ── Resumen del mes ── */}
       {loading && !resumen ? (
