@@ -19,6 +19,7 @@ public class AppDbContext : IdentityDbContext<AppUser>
     public DbSet<RutinaDia> RutinasDia { get; set; }
     public DbSet<MovimientoFinanciero> MovimientosFinancieros { get; set; }
     public DbSet<CompraFutura> ComprasFuturas { get; set; }
+    public DbSet<GymSettings> GymSettings { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

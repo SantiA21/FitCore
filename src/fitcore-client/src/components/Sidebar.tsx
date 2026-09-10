@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import {
   LayoutDashboard, Users, CreditCard, Calendar, User, LogOut,
   ClipboardList, ShieldCheck, TrendingUp, Menu, X,
-  PanelLeftClose, PanelLeftOpen, Wallet, FileSpreadsheet,
+  PanelLeftClose, PanelLeftOpen, Wallet, FileSpreadsheet, Settings,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
+import { useGymSettings } from "@/context/GymSettingsContext";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import logoIcon from "@/assets/brand/fitcore-icon.png";
 
@@ -25,6 +26,7 @@ const adminNavItems: NavItem[] = [
   { label: "Asistencias", icon: Calendar, path: "/asistencias" },
   { label: "Contabilidad", icon: Wallet, path: "/contabilidad" },
   { label: "Reportes", icon: FileSpreadsheet, path: "/reportes" },
+  { label: "Configuración", icon: Settings, path: "/configuracion" },
 ];
 
 const clienteNavItems: NavItem[] = [
@@ -50,6 +52,7 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout, isAdmin } = useAuth();
+  const { settings } = useGymSettings();
   const ahora = useReloj();
 
   const [collapsed, setCollapsed] = useState(() => {
@@ -118,8 +121,8 @@ export default function Sidebar() {
         {/* Logo + cerrar (mobile) */}
         <div className={cn("border-b border-[#f0f0f0] flex items-center", collapsed ? "justify-center p-4" : "justify-between p-5")}>
           <div className="flex items-center gap-2 min-w-0">
-            <img src={logoIcon} alt="FitCore" className="h-8 w-8 object-contain shrink-0" />
-            {!collapsed && <h1 className="text-lg font-bold text-black truncate">FitCore</h1>}
+            <img src={settings.logoBase64 ?? logoIcon} alt={settings.nombreGimnasio ?? "FitCore"} className="h-8 w-8 object-contain shrink-0" />
+            {!collapsed && <h1 className="text-lg font-bold text-black truncate">{settings.nombreGimnasio ?? "FitCore"}</h1>}
           </div>
           <button onClick={() => setMobileOpen(false)} className="md:hidden text-gray-400" aria-label="Cerrar menú">
             <X className="h-4 w-4" />
@@ -221,6 +224,10 @@ export default function Sidebar() {
               <LogOut className="h-4 w-4" />
               <span>Cerrar sesión</span>
             </button>
+          )}
+
+          {settings.logoBase64 && !collapsed && (
+            <p className="text-[10px] text-gray-300 text-center pt-1">Powered by FitCore</p>
           )}
         </div>
       </aside>

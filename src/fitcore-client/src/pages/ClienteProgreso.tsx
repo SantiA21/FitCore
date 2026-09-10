@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Camera, Dumbbell, Plus, Save, Scale, Trash2, ImageOff } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import { fileToBase64 } from "@/lib/fileToBase64";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,15 +35,6 @@ const MAX_FOTO_BYTES = 5 * 1024 * 1024;
 
 function hoyISO() {
   return new Date().toISOString().split("T")[0];
-}
-
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
 }
 
 export default function ClienteProgreso() {

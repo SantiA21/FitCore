@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { useGymSettings } from "@/context/GymSettingsContext";
 import { apiFetch } from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [tardando, setTardando] = useState(false);
   const { login, isAuthenticated, isCliente } = useAuth();
+  const { settings } = useGymSettings();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -71,8 +73,11 @@ export default function Login() {
       <div className="bg-white border border-[#f0f0f0] rounded-xl p-8 w-full max-w-sm shadow-sm animate-scale-in">
         {/* Logo */}
         <div className="mb-8 flex flex-col items-center text-center">
-          <img src={logoFull} alt="FitCore" className="h-24 w-auto object-contain" />
+          <img src={settings.logoBase64 ?? logoFull} alt={settings.nombreGimnasio ?? "FitCore"} className="h-24 w-auto object-contain" />
           <p className="text-sm text-[#888] mt-3">Iniciá sesión para continuar</p>
+          {settings.mensajeBienvenida && (
+            <p className="text-xs text-[#aaa] mt-2 max-w-xs">{settings.mensajeBienvenida}</p>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

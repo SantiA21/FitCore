@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
+import { GymSettingsProvider } from "@/context/GymSettingsContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Layout from "./components/Layout";
 import Login from "./pages/Login";
@@ -20,10 +21,12 @@ import MiProgreso from "./pages/MiProgreso";
 import ClienteProgreso from "./pages/ClienteProgreso";
 import Contabilidad from "./pages/Contabilidad";
 import Reportes from "./pages/Reportes";
+import Configuracion from "./pages/Configuracion";
 
 function App() {
   return (
     <BrowserRouter>
+      <GymSettingsProvider>
       <AuthProvider>
         <Routes>
           {/* Rutas públicas */}
@@ -81,6 +84,11 @@ function App() {
               <Layout><Reportes /></Layout>
             </ProtectedRoute>
           } />
+          <Route path="/configuracion" element={
+            <ProtectedRoute allowedCategorias={["Admin", "Entrenador"]}>
+              <Layout><Configuracion /></Layout>
+            </ProtectedRoute>
+          } />
 
           {/* Rutas Cliente */}
           <Route path="/dashboard-cliente" element={
@@ -114,6 +122,7 @@ function App() {
         </Routes>
         <Toaster />
       </AuthProvider>
+      </GymSettingsProvider>
     </BrowserRouter>
   );
 }

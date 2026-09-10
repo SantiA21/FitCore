@@ -16,6 +16,7 @@ import {
   CheckCircle2
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useGymSettings } from "@/context/GymSettingsContext";
 import { apiFetch } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +40,7 @@ interface AsistenciaItem {
 
 export default function DashboardCliente() {
   const { user } = useAuth();
+  const { settings } = useGymSettings();
   const navigate = useNavigate();
 
   const [membresia, setMembresia] = useState<MiMembresia | null>(null);
@@ -114,7 +116,7 @@ export default function DashboardCliente() {
             </h1>
           </div>
           <p className="text-sm text-gray-500 font-medium">
-            Bienvenido a tu panel de FitCore. Tu constancia forja tus resultados.
+            {settings.mensajeBienvenida || "Bienvenido a tu panel de FitCore. Tu constancia forja tus resultados."}
           </p>
         </div>
 
