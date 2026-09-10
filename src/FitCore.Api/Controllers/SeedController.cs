@@ -1,3 +1,4 @@
+#if DEBUG
 using FitCore.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
 
@@ -28,3 +29,4 @@ public class SeedController : ControllerBase
         return Ok(new { mensaje = "Base de datos reiniciada y re-sembrada con datos de prueba." });
     }
 }
+#endif
