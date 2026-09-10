@@ -1,14 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Plus, Pencil, UserX, UserCheck, Trash2, CalendarX, TrendingUp } from "lucide-react";
+import { Search, Plus, Pencil, UserX, UserCheck, Trash2, CalendarX, TrendingUp, Phone, Mail, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
-import {
-  Table, TableBody, TableCell, TableHead,
-  TableHeader, TableRow,
-} from "@/components/ui/table";
 import { useNavigate } from "react-router-dom";
 import {
   Dialog, DialogContent, DialogDescription,
@@ -44,24 +40,43 @@ type Plan = {
   precio: number;
 };
 
-function TableRowSkeleton() {
+function ClienteCardSkeleton() {
   return (
-    <TableRow>
-      <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-      <TableCell><Skeleton className="h-4 w-40" /></TableCell>
-      <TableCell><Skeleton className="h-4 w-28" /></TableCell>
-      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-      <TableCell><Skeleton className="h-5 w-14 rounded-lg" /></TableCell>
-      <TableCell>
-        <div className="flex justify-end gap-2">
-          <Skeleton className="h-8 w-8 rounded-md" />
-          <Skeleton className="h-8 w-8 rounded-md" />
-          <Skeleton className="h-8 w-8 rounded-md" />
+    <div className="bg-white border border-gray-200/80 rounded-2xl p-5 space-y-4">
+      <div className="flex items-center gap-3">
+        <Skeleton className="h-11 w-11 rounded-full shrink-0" />
+        <div className="space-y-1.5 flex-1">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-3 w-20" />
         </div>
-      </TableCell>
-    </TableRow>
+      </div>
+      <Skeleton className="h-3 w-full" />
+      <Skeleton className="h-3 w-3/4" />
+      <div className="flex justify-end gap-1.5 pt-2 border-t border-gray-100">
+        <Skeleton className="h-8 w-8 rounded-lg" />
+        <Skeleton className="h-8 w-8 rounded-lg" />
+        <Skeleton className="h-8 w-8 rounded-lg" />
+      </div>
+    </div>
   );
+}
+
+const AVATAR_COLORS = [
+  "bg-indigo-50 text-indigo-600",
+  "bg-orange-50 text-orange-600",
+  "bg-emerald-50 text-emerald-600",
+  "bg-rose-50 text-rose-600",
+  "bg-blue-50 text-blue-600",
+  "bg-purple-50 text-purple-600",
+];
+
+function avatarColor(id: string) {
+  const sum = id.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  return AVATAR_COLORS[sum % AVATAR_COLORS.length];
+}
+
+function iniciales(nombre: string, apellido: string) {
+  return `${nombre[0] ?? ""}${apellido[0] ?? ""}`.toUpperCase();
 }
 
 function diasRestantes(fechaVence: string | null): { texto: string; urgente: boolean } | null {
@@ -328,9 +343,14 @@ export default function Clientes() {
   return (
     <TooltipProvider>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-black">Clientes</h1>
-          <Button onClick={() => navigate("/clientes/nuevo")}>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">Clientes</h1>
+            <p className="text-sm text-gray-500 font-medium mt-1">
+              {loading ? "Cargando..." : `${clientesFiltrados.length} ${clientesFiltrados.length === 1 ? "cliente" : "clientes"}`}
+            </p>
+          </div>
+          <Button onClick={() => navigate("/clientes/nuevo")} className="rounded-xl">
             <Plus className="h-4 w-4 mr-2" />
             Nuevo Cliente
           </Button>
@@ -343,153 +363,156 @@ export default function Clientes() {
             placeholder="Buscar por nombre..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            className="pl-10"
+            className="pl-10 rounded-xl"
           />
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Teléfono</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Plan</TableHead>
-                <TableHead>Fecha alta</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                Array.from({ length: 5 }).map((_, i) => <TableRowSkeleton key={i} />)
-              ) : clientesFiltrados.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center text-gray-500 py-8 font-normal">
-                    No hay clientes
-                  </TableCell>
-                </TableRow>
-              ) : (
-                clientesFiltrados.map((c) => (
-                  <TableRow key={c.id} className="hover:bg-gray-50 transition-colors">
-                    <TableCell className="font-medium">{c.nombre} {c.apellido}</TableCell>
-                    <TableCell>{c.telefono}</TableCell>
-                    <TableCell>{c.email}</TableCell>
-                    <TableCell>
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => <ClienteCardSkeleton key={i} />)}
+          </div>
+        ) : clientesFiltrados.length === 0 ? (
+          <div className="bg-white border border-gray-200/80 rounded-2xl p-12 text-center space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-gray-100 text-gray-400 flex items-center justify-center mx-auto">
+              <Users className="w-6 h-6" />
+            </div>
+            <p className="text-sm font-bold text-gray-700">No hay clientes</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            {clientesFiltrados.map((c) => {
+              const d = diasRestantes(c.membresiaVence);
+              return (
+                <div
+                  key={c.id}
+                  className="bg-white border border-gray-200/80 rounded-2xl p-5 flex flex-col gap-4 hover:border-gray-300 hover:shadow-sm transition-all"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 font-bold text-sm ${avatarColor(c.id)}`}>
+                        {iniciales(c.nombre, c.apellido)}
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-bold text-gray-900 truncate">{c.nombre} {c.apellido}</h3>
+                        <p className="text-[11px] text-gray-400 mt-0.5">
+                          Alta: {new Date(c.fechaAlta).toLocaleDateString("es-AR")}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant={c.activo ? "success" : "danger"} className="shrink-0">
+                      {c.activo ? "Activo" : "Inactivo"}
+                    </Badge>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2 text-xs text-gray-600">
+                      <Phone className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                      <span className="truncate">{c.telefono || "Sin teléfono"}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-gray-600">
+                      <Mail className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                      <span className="truncate">{c.email}</span>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-gray-100 space-y-3">
+                    <div className="min-h-4">
                       {c.planNombre ? (
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-sm text-gray-700">{c.planNombre}</span>
-                          {(() => {
-                            const d = diasRestantes(c.membresiaVence);
-                            if (!d) return null;
-                            return (
-                              <span className={`text-xs font-medium ${d.urgente ? "text-red-500" : "text-gray-400"}`}>
-                                {d.texto}
-                              </span>
-                            );
-                          })()}
+                        <div className="flex items-baseline gap-2 flex-wrap">
+                          <p className="text-xs font-bold text-gray-700">{c.planNombre}</p>
+                          {d && (
+                            <span className={`text-[11px] font-semibold ${d.urgente ? "text-red-500" : "text-gray-400"}`}>
+                              {d.texto}
+                            </span>
+                          )}
                         </div>
                       ) : (
-                        <span className="text-sm text-gray-400">Sin plan</span>
+                        <span className="text-xs text-gray-400 font-medium">Sin plan</span>
                       )}
-                    </TableCell>
-                    <TableCell>{new Date(c.fechaAlta).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      <Badge variant={c.activo ? "success" : "danger"}>
-                        {c.activo ? "Activo" : "Inactivo"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="inline-flex items-center gap-1">
+                    </div>
 
-                        {/* Editar */}
+                    <div className="flex items-center justify-end gap-0.5">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button" variant="ghost" size="icon"
+                            className="h-8 w-8"
+                            onClick={() => openEdit(c)}
+                            aria-label="Editar"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Editar</TooltipContent>
+                      </Tooltip>
+
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button" variant="ghost" size="icon"
+                            className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            onClick={() => navigate(`/clientes/${c.id}/progreso`)}
+                            aria-label="Ver progreso"
+                          >
+                            <TrendingUp className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Progreso y rutina</TooltipContent>
+                      </Tooltip>
+
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button" variant="ghost" size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleToggleActivo(c)}
+                            disabled={togglingId === c.id}
+                            aria-label={c.activo ? "Desactivar" : "Reactivar"}
+                          >
+                            {c.activo
+                              ? <UserX className="h-4 w-4" />
+                              : <UserCheck className="h-4 w-4" />}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{c.activo ? "Desactivar" : "Reactivar"}</TooltipContent>
+                      </Tooltip>
+
+                      {c.planNombre && (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
                               type="button" variant="ghost" size="icon"
-                              className="h-8 w-8"
-                              onClick={() => openEdit(c)}
-                              aria-label="Editar"
+                              className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                              onClick={() => openBaja(c)}
+                              aria-label="Dar de baja membresía"
                             >
-                              <Pencil className="h-4 w-4" />
+                              <CalendarX className="h-4 w-4" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Editar</TooltipContent>
+                          <TooltipContent>Dar de baja membresía</TooltipContent>
                         </Tooltip>
+                      )}
 
-                        {/* Ver progreso */}
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              type="button" variant="ghost" size="icon"
-                              className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                              onClick={() => navigate(`/clientes/${c.id}/progreso`)}
-                              aria-label="Ver progreso"
-                            >
-                              <TrendingUp className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Progreso y rutina</TooltipContent>
-                        </Tooltip>
-
-                        {/* Activar / Desactivar */}
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              type="button" variant="ghost" size="icon"
-                              className="h-8 w-8"
-                              onClick={() => handleToggleActivo(c)}
-                              disabled={togglingId === c.id}
-                              aria-label={c.activo ? "Desactivar" : "Reactivar"}
-                            >
-                              {c.activo
-                                ? <UserX className="h-4 w-4" />
-                                : <UserCheck className="h-4 w-4" />}
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>{c.activo ? "Desactivar" : "Reactivar"}</TooltipContent>
-                        </Tooltip>
-
-                        {/* Dar de baja membresía */}
-                        {c.planNombre && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                type="button" variant="ghost" size="icon"
-                                className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-                                onClick={() => openBaja(c)}
-                                aria-label="Dar de baja membresía"
-                              >
-                                <CalendarX className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Dar de baja membresía</TooltipContent>
-                          </Tooltip>
-                        )}
-
-                        {/* Eliminar permanentemente */}
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              type="button" variant="ghost" size="icon"
-                              className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
-                              onClick={() => openDelete(c)}
-                              aria-label="Eliminar"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Eliminar</TooltipContent>
-                        </Tooltip>
-
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button" variant="ghost" size="icon"
+                            className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+                            onClick={() => openDelete(c)}
+                            aria-label="Eliminar"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Eliminar</TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* ── Modal edición ── */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>

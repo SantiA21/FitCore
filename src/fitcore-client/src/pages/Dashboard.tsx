@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Users, AlertCircle, DollarSign, Calendar } from "lucide-react";
 import { apiFetch } from "@/lib/api";
-import BentoCard from "@/components/BentoCard";
+import StatTile from "@/components/StatTile";
 import CalendarBentoCard from "@/components/CalendarBentoCard";
 import LatestClientsBentoCard from "@/components/LatestClientsBentoCard";
 import QuickRegisterBentoCard from "@/components/QuickRegisterBentoCard";
@@ -109,96 +109,35 @@ export default function Dashboard() {
       </div>
 
       {/* --- Fila de Métricas Principales (Reales) --- */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-2">
-
-        {/* Clientes Activos */}
-        <div onClick={() => navigate("/clientes")} className="cursor-pointer group">
-          <BentoCard
-            className="!p-5 border-t-4 border-t-indigo-500 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 bg-white/90"
-            delay={100}
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-100 shadow-xs group-hover:scale-105 transition-transform">
-                <Users className="h-6 w-6" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-2xl sm:text-3xl font-black text-black tracking-tight leading-none truncate">
-                  {stats ? stats.clientesActivos : (loading ? "..." : 0)}
-                </p>
-                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mt-1.5 truncate">
-                  Clientes Activos
-                </p>
-              </div>
-            </div>
-          </BentoCard>
-        </div>
-
-        {/* Clientes con Deuda */}
-        <div onClick={() => navigate("/estado-cuenta")} className="cursor-pointer group">
-          <BentoCard
-            className="!p-5 border-t-4 border-t-rose-500 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 bg-white/90"
-            delay={200}
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 border border-rose-100 shadow-xs group-hover:scale-105 transition-transform">
-                <AlertCircle className="h-6 w-6" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-2xl sm:text-3xl font-black text-black tracking-tight leading-none truncate">
-                  {stats ? stats.cuotasVencidas : (loading ? "..." : 0)}
-                </p>
-                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mt-1.5 truncate">
-                  Clientes con Deuda
-                </p>
-              </div>
-            </div>
-          </BentoCard>
-        </div>
-
-        {/* Ingresos del Mes */}
-        <div onClick={() => navigate("/pagos")} className="cursor-pointer group">
-          <BentoCard
-            className="!p-5 border-t-4 border-t-emerald-500 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 bg-white/90"
-            delay={300}
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100 shadow-xs group-hover:scale-105 transition-transform">
-                <DollarSign className="h-6 w-6" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-2xl sm:text-3xl font-black text-black tracking-tight leading-none truncate">
-                  {stats ? stats.ingresosMesFormatted : (loading ? "..." : "$0")}
-                </p>
-                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mt-1.5 truncate">
-                  Ingresos del Mes
-                </p>
-              </div>
-            </div>
-          </BentoCard>
-        </div>
-
-        {/* Asistencias Hoy */}
-        <div onClick={() => navigate("/asistencias")} className="cursor-pointer group">
-          <BentoCard
-            className="!p-5 border-t-4 border-t-amber-500 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 bg-white/90"
-            delay={400}
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-100 shadow-xs group-hover:scale-105 transition-transform">
-                <Calendar className="h-6 w-6" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-2xl sm:text-3xl font-black text-black tracking-tight leading-none truncate">
-                  {stats ? stats.asistenciasHoy : (loading ? "..." : 0)}
-                </p>
-                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mt-1.5 truncate">
-                  Asistencias Hoy
-                </p>
-              </div>
-            </div>
-          </BentoCard>
-        </div>
-
+      <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-4 gap-4 px-2">
+        <StatTile
+          icon={Users}
+          color="indigo"
+          value={stats ? stats.clientesActivos : (loading ? "..." : 0)}
+          label="Clientes Activos"
+          onClick={() => navigate("/clientes")}
+        />
+        <StatTile
+          icon={AlertCircle}
+          color="rose"
+          value={stats ? stats.cuotasVencidas : (loading ? "..." : 0)}
+          label="Clientes con Deuda"
+          onClick={() => navigate("/estado-cuenta")}
+        />
+        <StatTile
+          icon={DollarSign}
+          color="emerald"
+          value={stats ? stats.ingresosMesFormatted : (loading ? "..." : "$0")}
+          label="Ingresos del Mes"
+          onClick={() => navigate("/pagos")}
+        />
+        <StatTile
+          icon={Calendar}
+          color="amber"
+          value={stats ? stats.asistenciasHoy : (loading ? "..." : 0)}
+          label="Asistencias Hoy"
+          onClick={() => navigate("/asistencias")}
+        />
       </div>
 
       {/* --- Layout Principal --- */}
