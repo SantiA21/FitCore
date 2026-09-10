@@ -94,7 +94,7 @@ export default function QuickRegisterBentoCard({
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 flex-1">
+      <div className="flex flex-col gap-3 lg:flex-1">
         <div className="space-y-1.5">
           <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Seleccionar Cliente</label>
           <Select

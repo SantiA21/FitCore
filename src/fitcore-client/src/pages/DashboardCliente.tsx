@@ -206,13 +206,13 @@ export default function DashboardCliente() {
       )}
 
       {/* ── 3. Métricas rápidas del Socio ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Entrenamientos del mes */}
         <div className="bg-white border border-gray-200/80 rounded-3xl p-6 shadow-xs flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center shrink-0">
             <Flame className="w-7 h-7" />
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Asistencias del Mes</p>
             {loading ? (
               <Skeleton className="h-7 w-16 rounded mt-0.5" />

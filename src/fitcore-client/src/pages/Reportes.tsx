@@ -145,11 +145,11 @@ export default function Reportes() {
               <Button type="button" variant="outline" size="sm" className="rounded-lg text-xs" onClick={() => aplicarRango(30)}>30 días</Button>
               <Button type="button" variant="outline" size="sm" className="rounded-lg text-xs" onClick={() => aplicarRango(90)}>90 días</Button>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Label className="text-xs font-bold text-gray-500 flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> Desde</Label>
-              <Input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} className="rounded-xl h-9 w-40" />
+              <Input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} className="rounded-xl h-9 w-36 sm:w-40" />
               <Label className="text-xs font-bold text-gray-500">Hasta</Label>
-              <Input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} className="rounded-xl h-9 w-40" />
+              <Input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} className="rounded-xl h-9 w-36 sm:w-40" />
               <Button type="button" size="sm" className="rounded-lg text-xs bg-black hover:bg-black/90" onClick={cargar}>Aplicar</Button>
             </div>
           </>

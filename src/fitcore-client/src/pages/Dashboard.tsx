@@ -107,20 +107,20 @@ export default function Dashboard() {
   const porVencer = stats?.proximosVencimientos.length ?? 0;
 
   return (
-    <div className="space-y-4 pb-6 max-w-[1800px] mx-auto h-full flex flex-col">
-      <div className="flex justify-between items-center px-1">
+    <div className="space-y-4 pb-6 max-w-[1800px] mx-auto flex flex-col lg:h-full">
+      <div className="flex flex-wrap justify-between items-center gap-2 px-1">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-black tracking-tight">Panel Central</h1>
           <p className="text-gray-400 text-[10px] font-bold uppercase tracking-[0.2em] mt-0.5">Control de Gimnasio</p>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-black text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-black text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shrink-0">
           <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
           Sistema Activo
         </div>
       </div>
 
       {/* --- Fila de Métricas Principales --- */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-3 px-1">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-3 px-1">
         <StatTile
           icon={Users}
           color="indigo"
@@ -171,8 +171,8 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* --- Fila principal de contenido (una sola fila, sin scroll) --- */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 px-1 flex-1 min-h-0">
+      {/* --- Fila principal de contenido (una sola fila sin scroll en desktop; apilada en mobile/tablet) --- */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 px-1 lg:flex-1 lg:min-h-0">
         <CalendarBentoCard
           key={calendarKey}
           className="lg:col-span-3"
@@ -183,7 +183,7 @@ export default function Dashboard() {
 
         <div className="lg:col-span-5 flex flex-col gap-4">
           <PaymentsGraphBentoCard
-            className="flex-1"
+            className="lg:flex-1"
             delay={150}
             loading={loading}
             serie={stats?.serieIngresos}
@@ -194,7 +194,7 @@ export default function Dashboard() {
           <QuickRegisterBentoCard
             clientes={clientes}
             fechaSeleccionada={fechaSeleccionada}
-            className="bg-primary/5 border-primary/10 flex-1"
+            className="bg-primary/5 border-primary/10 lg:flex-1"
             delay={200}
             onSuccess={handleRegistrationSuccess}
           />
@@ -202,14 +202,14 @@ export default function Dashboard() {
 
         <div className="lg:col-span-4 flex flex-col gap-4">
           <UpcomingSubscriptionsBentoCard
-            className="flex-1"
+            className="lg:flex-1"
             delay={250}
             loading={loading}
             vencimientos={stats?.proximosVencimientos}
           />
           <LatestClientsBentoCard
             clientes={ultimosClientes}
-            className="flex-1"
+            className="lg:flex-1"
             delay={300}
             loading={loading}
           />

@@ -30,7 +30,7 @@ export default function PaymentsGraphBentoCard({
 }: PaymentsGraphBentoCardProps) {
   if (loading) {
     return (
-      <BentoCard className={cn("flex flex-col h-full !p-4", className)} delay={delay}>
+      <BentoCard className={cn("flex flex-col lg:h-full !p-4", className)} delay={delay}>
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2.5">
             <Skeleton className="h-8 w-8 rounded-lg" />
@@ -41,7 +41,7 @@ export default function PaymentsGraphBentoCard({
           </div>
           <Skeleton className="h-5 w-14 rounded-full" />
         </div>
-        <div className="flex-1 flex flex-col justify-end mt-2">
+        <div className="lg:flex-1 flex flex-col justify-end mt-2">
           <div className="mb-3 space-y-1.5">
             <Skeleton className="h-7 w-28 rounded" />
             <Skeleton className="h-2.5 w-32 rounded" />
@@ -63,7 +63,7 @@ export default function PaymentsGraphBentoCard({
   const isPositive = porcentajeCrecimiento >= 0;
 
   return (
-    <BentoCard className={cn("flex flex-col h-full !p-4", className)} delay={delay}>
+    <BentoCard className={cn("flex flex-col lg:h-full !p-4", className)} delay={delay}>
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2.5">
           <div className="p-1.5 bg-primary/10 rounded-lg">
@@ -83,7 +83,7 @@ export default function PaymentsGraphBentoCard({
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col justify-end mt-2">
+      <div className="lg:flex-1 flex flex-col justify-end mt-2">
         <div className="mb-2">
           <p className="text-2xl font-black text-black tracking-tighter">
             {totalSemanaFormatted ?? `$${totalSemana.toLocaleString("es-AR")}`}

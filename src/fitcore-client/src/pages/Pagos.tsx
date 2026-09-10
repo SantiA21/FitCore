@@ -176,21 +176,21 @@ export default function Pagos() {
       <h1 className="text-2xl font-semibold text-black">Pagos</h1>
 
       {/* Métricas */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-white border border-gray-200 rounded-xl p-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="bg-white border border-gray-200 rounded-xl p-5 min-w-0">
           <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Recaudado hoy</p>
           {pagosLoading ? (
             <Skeleton className="h-8 w-28 rounded mt-1" />
           ) : (
-            <p className="text-2xl font-semibold text-black animate-fade-in-up">{formatMonto(totalHoy)}</p>
+            <p className="text-xl sm:text-2xl font-semibold text-black animate-fade-in-up truncate">{formatMonto(totalHoy)}</p>
           )}
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-5">
+        <div className="bg-white border border-gray-200 rounded-xl p-5 min-w-0">
           <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Recaudado este mes</p>
           {pagosLoading ? (
             <Skeleton className="h-8 w-28 rounded mt-1" />
           ) : (
-            <p className="text-2xl font-semibold text-black animate-fade-in-up">{formatMonto(totalMes)}</p>
+            <p className="text-xl sm:text-2xl font-semibold text-black animate-fade-in-up truncate">{formatMonto(totalMes)}</p>
           )}
         </div>
       </div>

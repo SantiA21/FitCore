@@ -564,9 +564,9 @@ export default function CheckoutModal({
             <form onSubmit={handlePagarTarjeta} className="space-y-4 pt-1 animate-in fade-in duration-200">
               {/* Presets de prueba */}
               <div className="bg-amber-500/10 border border-amber-500/25 rounded-2xl p-3 space-y-2">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-x-2 gap-y-1">
                   <span className="text-xs font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
-                    <FlaskConical className="w-3.5 h-3.5 text-amber-600" />
+                    <FlaskConical className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                     Tarjetas de Test (1 clic)
                   </span>
                   <span className="text-[10px] text-amber-700 dark:text-amber-400 font-medium">
@@ -756,26 +756,26 @@ export default function CheckoutModal({
                 </div>
 
                 <div className="space-y-2 text-xs">
-                  <div className="flex justify-between items-center bg-white dark:bg-zinc-900 p-2.5 rounded-xl border border-gray-200 dark:border-zinc-800">
-                    <div>
+                  <div className="flex justify-between items-center gap-x-3 bg-white dark:bg-zinc-900 p-2.5 rounded-xl border border-gray-200 dark:border-zinc-800">
+                    <div className="min-w-0">
                       <span className="text-[10px] text-gray-400 block uppercase font-bold">Banco & Titular</span>
-                      <span className="font-semibold text-gray-800 dark:text-zinc-200">Banco Galicia — FitCore Gym S.A.</span>
+                      <span className="font-semibold text-gray-800 dark:text-zinc-200 truncate block">Banco Galicia — FitCore Gym S.A.</span>
                     </div>
-                    <span className="text-[10px] text-gray-500 font-mono">CUIT: 30-71234567-8</span>
+                    <span className="text-[10px] text-gray-500 font-mono shrink-0">CUIT: 30-71234567-8</span>
                   </div>
 
                   {/* Alias con botón de copia */}
-                  <div className="flex justify-between items-center bg-white dark:bg-zinc-900 p-2.5 rounded-xl border border-gray-200 dark:border-zinc-800">
-                    <div>
+                  <div className="flex justify-between items-center gap-x-3 bg-white dark:bg-zinc-900 p-2.5 rounded-xl border border-gray-200 dark:border-zinc-800">
+                    <div className="min-w-0">
                       <span className="text-[10px] text-gray-400 block uppercase font-bold">Alias</span>
-                      <span className="font-mono font-bold text-gray-900 dark:text-zinc-100 text-sm">FITCORE.GYM</span>
+                      <span className="font-mono font-bold text-gray-900 dark:text-zinc-100 text-sm truncate">FITCORE.GYM</span>
                     </div>
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
                       onClick={() => copiarTexto("FITCORE.GYM", "alias")}
-                      className="h-8 gap-1.5 text-xs rounded-lg cursor-pointer"
+                      className="h-8 gap-1.5 text-xs rounded-lg cursor-pointer shrink-0"
                     >
                       {copiadoAlias ? (
                         <>
@@ -790,17 +790,17 @@ export default function CheckoutModal({
                   </div>
 
                   {/* CBU con botón de copia */}
-                  <div className="flex justify-between items-center bg-white dark:bg-zinc-900 p-2.5 rounded-xl border border-gray-200 dark:border-zinc-800">
-                    <div>
+                  <div className="flex justify-between items-center gap-x-3 bg-white dark:bg-zinc-900 p-2.5 rounded-xl border border-gray-200 dark:border-zinc-800">
+                    <div className="min-w-0">
                       <span className="text-[10px] text-gray-400 block uppercase font-bold">CBU / CVU</span>
-                      <span className="font-mono text-xs text-gray-700 dark:text-zinc-300">0070123420000012345678</span>
+                      <span className="font-mono text-xs text-gray-700 dark:text-zinc-300 truncate block">0070123420000012345678</span>
                     </div>
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
                       onClick={() => copiarTexto("0070123420000012345678", "cbu")}
-                      className="h-8 gap-1.5 text-xs rounded-lg cursor-pointer"
+                      className="h-8 gap-1.5 text-xs rounded-lg cursor-pointer shrink-0"
                     >
                       {copiadoCbu ? (
                         <>

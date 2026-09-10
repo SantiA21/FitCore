@@ -99,7 +99,7 @@ export default function CalendarBentoCard({ className, delay, onSelectDate, sele
   };
 
   return (
-    <BentoCard className={cn("flex flex-col h-full !p-4", className)} delay={delay}>
+    <BentoCard className={cn("flex flex-col lg:h-full !p-4", className)} delay={delay}>
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <CalendarIcon className="h-3.5 w-3.5 text-primary" />
@@ -124,14 +124,14 @@ export default function CalendarBentoCard({ className, delay, onSelectDate, sele
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-7 gap-1 flex-1">
+        <div className="grid grid-cols-7 gap-1 lg:flex-1">
           {Array.from({ length: 35 }).map((_, i) => (
             <Skeleton key={i} className="aspect-square w-full rounded-xl bg-gray-50" />
           ))}
         </div>
       ) : (
         <TooltipProvider delayDuration={100}>
-          <div className="grid grid-cols-7 gap-1 flex-1">
+          <div className="grid grid-cols-7 gap-1 lg:flex-1">
             {celdas.map((dia, i) => {
               if (!dia) return <div key={`empty-${i}`} />;
               const fechaStr = toDateOnly(dia);
