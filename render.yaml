@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: fitcore-api
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: src/FitCore.Api/Dockerfile
+    dockerContext: .
+    healthCheckPath: /scalar/v1
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ASPNETCORE_URLS
+        value: http://+:10000
+      - key: ConnectionStrings__Default
+        sync: false
+      - key: JwtSettings__SecretKey
+        sync: false
+      - key: JwtSettings__Issuer
+        value: FitCoreApi
+      - key: JwtSettings__Audience
+        value: FitCoreClient
+      - key: JwtSettings__ExpirationDays
+        value: "7"
+      - key: MercadoPago__AccessToken
+        sync: false
+      - key: MercadoPago__PublicKey
+        sync: false

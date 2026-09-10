@@ -139,3 +139,29 @@ O empaquetado en imagen Docker para producción:
 cd src/fitcore-client
 docker build -f Dockerfile.prod -t fitcore-client:latest .
 ```
+
+---
+
+## 🌐 Despliegue en producción
+
+**Base de datos (Postgres gestionado):** el proyecto usa el Supabase Postgres ya provisionado (`Fitcore`, región `us-east-2`). Como el plan free de Supabase solo expone la conexión directa por IPv6, hosts con salida IPv4 (Render, Railway, etc.) deben usar el **Session Pooler**, no la conexión directa:
+
+1. En el dashboard de Supabase del proyecto `Fitcore`, click en **Connect** → pestaña **Session pooler**.
+2. Copiá el connection string (`postgres://postgres.[ref]:[password]@aws-[region].pooler.supabase.com:5432/postgres`) y convertilo al formato de .NET:
+   ```
+   Host=aws-[region].pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.[ref];Password=[password]
+   ```
+
+**API (`fitcore-api`) en Render — plan free, sin tarjeta:**
+
+1. Creá una cuenta en [render.com](https://render.com/) (con GitHub alcanza).
+2. **New → Blueprint**, apuntá al repo `SantiA21/FitCore` — Render va a detectar `render.yaml` en la raíz y proponer el servicio `fitcore-api`.
+3. Completá las variables marcadas como secretas en el dashboard de Render:
+   - `ConnectionStrings__Default`: el connection string del Session Pooler de arriba.
+   - `JwtSettings__SecretKey`: una cadena aleatoria de 32+ caracteres (`openssl rand -hex 32`).
+   - `MercadoPago__AccessToken` / `MercadoPago__PublicKey`: dejá los valores `TEST-...` de `.env.example` mientras sea demo.
+4. Deploy. La URL queda como `https://fitcore-api.onrender.com` (el plan free se duerme tras 15 min de inactividad y tarda ~30s en despertar en el próximo request).
+
+**Frontend (`fitcore-client`) en Vercel:**
+
+Una vez que la API esté arriba, configurá `VITE_API_URL` en el proyecto de Vercel apuntando a la URL de Render y volvé a desplegar (ver sección siguiente).
