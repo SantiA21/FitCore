@@ -38,7 +38,7 @@ export default function PaymentsGraphBentoCard({
 
   if (loading) {
     return (
-      <BentoCard className={cn("flex flex-col !p-3", className)} delay={delay}>
+      <BentoCard className={cn("flex flex-col lg:h-full !p-3", className)} delay={delay}>
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2.5">
             <Skeleton className="h-8 w-8 rounded-lg" />
@@ -78,7 +78,7 @@ export default function PaymentsGraphBentoCard({
   }));
 
   return (
-    <BentoCard className={cn("flex flex-col !p-3", className)} delay={delay}>
+    <BentoCard className={cn("flex flex-col lg:h-full !p-3", className)} delay={delay}>
       <div
         className="flex items-center justify-between mb-1 cursor-pointer group"
         onClick={() => setModalOpen(true)}
