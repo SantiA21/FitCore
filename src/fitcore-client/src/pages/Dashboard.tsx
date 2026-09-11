@@ -447,16 +447,16 @@ export default function Dashboard() {
       </div>
 
       {/* --- Fila principal de contenido (una sola fila sin scroll en desktop; apilada en mobile/tablet) --- */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 px-1 lg:flex-1 lg:min-h-0">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 px-1 lg:flex-1 lg:min-h-0 lg:[grid-template-rows:minmax(0,1fr)]">
         <CalendarBentoCard
           key={calendarKey}
-          className="lg:col-span-3"
+          className="lg:col-span-3 lg:min-h-0"
           delay={100}
           selectedDate={fechaSeleccionada}
           onSelectDate={setFechaSeleccionada}
         />
 
-        <div className="lg:col-span-5 flex flex-col gap-3">
+        <div className="lg:col-span-5 flex flex-col gap-3 lg:min-h-0">
           <PaymentsGraphBentoCard
             className="lg:flex-1"
             delay={150}
@@ -475,7 +475,7 @@ export default function Dashboard() {
           />
         </div>
 
-        <div className="lg:col-span-4 flex flex-col gap-3">
+        <div className="lg:col-span-4 flex flex-col gap-3 lg:min-h-0">
           <UpcomingSubscriptionsBentoCard
             className="lg:flex-1"
             delay={250}
