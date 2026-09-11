@@ -40,8 +40,18 @@ async function descargarArchivo(path: string, filenameFallback: string) {
   if (!res.ok) throw new Error("No se pudo generar el archivo.");
   const blob = await res.blob();
   const disposition = res.headers.get("Content-Disposition");
-  const match = disposition?.match(/filename="?([^"]+)"?/);
-  const filename = match?.[1] ?? filenameFallback;
+  let filename = filenameFallback;
+  if (disposition) {
+    const utf8Match = disposition.match(/filename\*=UTF-8''([^;\r\n]+)/i);
+    if (utf8Match?.[1]) {
+      filename = decodeURIComponent(utf8Match[1]);
+    } else {
+      const standardMatch = disposition.match(/filename="?([^";\r\n]+)"?/i);
+      if (standardMatch?.[1]) {
+        filename = standardMatch[1].trim();
+      }
+    }
+  }
 
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -98,8 +108,8 @@ export default function Reportes() {
     setExportando(true);
     try {
       const query = usaRango ? `?desde=${desde}&hasta=${hasta}` : "";
-      await descargarArchivo(`/api/reportes/${tipo}/export${query}`, `${tipo}.xml`);
-      toast({ variant: "success", title: "Reporte exportado", description: "Se descargó el archivo listo para abrir en Excel." });
+      await descargarArchivo(`/api/reportes/${tipo}/export${query}`, `reporte_${tipo}.xlsx`);
+      toast({ variant: "success", title: "Reporte exportado", description: "Se descargó el archivo listo para abrir en Excel (.xlsx)." });
     } catch {
       toast({ variant: "destructive", title: "No se pudo exportar el reporte" });
     } finally {

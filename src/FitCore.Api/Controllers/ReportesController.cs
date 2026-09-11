@@ -1,11 +1,11 @@
-using System.Text;
-using FitCore.Api.Helpers;
+using System.Data;
 using FitCore.Domain.Entities;
 using FitCore.Infrastructure.Persistence;
 using FitCore.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using MiniExcelLibs;
 
 namespace FitCore.Api.Controllers;
 
@@ -65,10 +65,10 @@ public class ReportesController : ControllerBase
         var headers = new[] { "Fecha", "Cliente", "Monto", "Método", "Nota" };
         var rows = pagos.Select(p => (IReadOnlyList<object?>)new object?[]
         {
-            DateOnly.FromDateTime(p.Fecha), $"{p.User.Nombre} {p.User.Apellido}", p.Monto, p.Metodo, p.Nota
+            DateOnly.FromDateTime(p.Fecha).ToString("yyyy-MM-dd"), $"{p.User.Nombre} {p.User.Apellido}", p.Monto, p.Metodo, p.Nota
         });
 
-        return DevolverXml("Ingresos", headers, rows, $"ingresos_{d:yyyyMMdd}_{h:yyyyMMdd}.xml");
+        return await DevolverExcel("Ingresos", headers, rows, $"ingresos_{d:yyyyMMdd}_{h:yyyyMMdd}.xlsx");
     }
 
     private async Task<List<Pago>> ObtenerPagos(DateOnly desde, DateOnly hasta)
@@ -109,10 +109,10 @@ public class ReportesController : ControllerBase
         var headers = new[] { "Cliente", "Email", "Plan", "Vence", "Meses Adeudados", "Monto Estimado" };
         var rows = morosos.Select(m => (IReadOnlyList<object?>)new object?[]
         {
-            m.Estado.Nombre, m.Estado.Email, m.Estado.PlanNombre, m.Estado.MembresiaVence, m.MesesAdeudados, m.MontoEstimado
+            m.Estado.Nombre, m.Estado.Email, m.Estado.PlanNombre, m.Estado.MembresiaVence?.ToString("yyyy-MM-dd") ?? "-", m.MesesAdeudados, m.MontoEstimado
         });
 
-        return DevolverXml("Morosidad", headers, rows, $"morosidad_{DateTime.UtcNow:yyyyMMdd}.xml");
+        return await DevolverExcel("Morosidad", headers, rows, $"morosidad_{DateTime.UtcNow:yyyyMMdd}.xlsx");
     }
 
     private async Task<List<(FitCore.Application.DTOs.EstadoCuentaDto Estado, int MesesAdeudados, decimal MontoEstimado)>> ObtenerMorosos()
@@ -154,9 +154,9 @@ public class ReportesController : ControllerBase
         var porHora = await CalcularOcupacion(d, h);
 
         var headers = new[] { "Hora", "Cantidad de Asistencias" };
-        var rows = porHora.Select(p => (IReadOnlyList<object?>)new object?[] { $"{p.hora}:00", p.cantidad });
+        var rows = porHora.Select(p => (IReadOnlyList<object?>)new object?[] { $"{p.hora:00}:00", p.cantidad });
 
-        return DevolverXml("Ocupacion", headers, rows, $"ocupacion_{d:yyyyMMdd}_{h:yyyyMMdd}.xml");
+        return await DevolverExcel("Ocupacion", headers, rows, $"ocupacion_{d:yyyyMMdd}_{h:yyyyMMdd}.xlsx");
     }
 
     private async Task<List<(int hora, int cantidad)>> CalcularOcupacion(DateOnly desde, DateOnly hasta)
@@ -206,9 +206,9 @@ public class ReportesController : ControllerBase
         var items = ArmarItemsContables(pagos, movimientos);
 
         var headers = new[] { "Fecha", "Tipo", "Categoría", "Descripción", "Monto" };
-        var rows = items.Select(i => (IReadOnlyList<object?>)new object?[] { i.fecha, i.tipo, i.categoria, i.descripcion, i.monto });
+        var rows = items.Select(i => (IReadOnlyList<object?>)new object?[] { i.fecha.ToString("yyyy-MM-dd"), i.tipo, i.categoria, i.descripcion, i.monto });
 
-        return DevolverXml("Contable", headers, rows, $"contable_{d:yyyyMMdd}_{h:yyyyMMdd}.xml");
+        return await DevolverExcel("Contable", headers, rows, $"contable_{d:yyyyMMdd}_{h:yyyyMMdd}.xlsx");
     }
 
     private async Task<(List<Pago> Pagos, List<MovimientoFinanciero> Movimientos)> ObtenerDatosContables(DateOnly desde, DateOnly hasta)
@@ -252,11 +252,30 @@ public class ReportesController : ControllerBase
         return (ingresos, egresos, inversiones, compras);
     }
 
-    // ── Helper de exportación ────────────────────────────────────────────
+    // ── Helper de exportación Excel (.xlsx) ─────────────────────────────
 
-    private FileContentResult DevolverXml(string sheetName, IReadOnlyList<string> headers, IEnumerable<IReadOnlyList<object?>> rows, string fileName)
+    private async Task<IActionResult> DevolverExcel(string sheetName, IReadOnlyList<string> headers, IEnumerable<IReadOnlyList<object?>> rows, string fileName)
     {
-        var xml = SpreadsheetXml.Build(sheetName, headers, rows);
-        return File(Encoding.UTF8.GetBytes(xml), "application/vnd.ms-excel", fileName);
+        var dt = new DataTable(sheetName);
+        foreach (var h in headers)
+            dt.Columns.Add(h, typeof(object));
+
+        foreach (var row in rows)
+        {
+            var dr = dt.NewRow();
+            for (int i = 0; i < headers.Count && i < row.Count; i++)
+                dr[i] = row[i] ?? DBNull.Value;
+            dt.Rows.Add(dr);
+        }
+
+        var memoryStream = new MemoryStream();
+        await memoryStream.SaveAsAsync(dt, sheetName: sheetName);
+        memoryStream.Seek(0, SeekOrigin.Begin);
+
+        return File(
+            memoryStream,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            fileName
+        );
     }
 }
