@@ -81,7 +81,11 @@ public class AsistenciasController : ControllerBase
             {
                 fecha = g.Key,
                 total = g.Count(),
-                asistentes = g.Select(a => a.User.Nombre).ToList(),
+                asistentes = g
+                    .Select(a => string.IsNullOrWhiteSpace(a.User.Apellido) ? a.User.Nombre : $"{a.User.Nombre} {a.User.Apellido}".Trim())
+                    .Where(n => !string.IsNullOrEmpty(n))
+                    .Distinct()
+                    .ToList(),
             })
             .ToList();
 

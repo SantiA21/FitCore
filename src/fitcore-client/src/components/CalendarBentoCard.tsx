@@ -206,7 +206,9 @@ export default function CalendarBentoCard({ className, delay, onSelectDate, sele
                   >
                     <div className="space-y-3 min-w-[160px]">
                       <div className="flex justify-between items-center border-b border-gray-100 pb-2">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-primary">Asistencias del Día</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-primary">
+                          {esHoy ? "Asistencias de Hoy" : `Asistencias (${dia.getDate()} de ${MESES[mes]})`}
+                        </p>
                         <div className="bg-primary/10 px-2 py-0.5 rounded-full">
                           <span className="text-[11px] font-black text-primary">{total}</span>
                         </div>
@@ -221,7 +223,7 @@ export default function CalendarBentoCard({ className, delay, onSelectDate, sele
                           </div>
                         )) : (
                           <div className="py-4 text-center">
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Sin registros hoy</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Sin asistencias registradas</p>
                           </div>
                         )}
                       </div>
