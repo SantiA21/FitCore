@@ -136,7 +136,7 @@ export default function CalendarBentoCard({ className, delay, onSelectDate, sele
   };
 
   return (
-    <BentoCard className={cn("flex flex-col lg:h-full !p-3", className)} delay={delay}>
+    <BentoCard className={cn("flex flex-col !p-3", className)} delay={delay}>
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <CalendarIcon className="h-3.5 w-3.5 text-primary" />

@@ -379,41 +379,40 @@ export default function Dashboard() {
       {/* --- Accesos rápidos a las tareas del día a día --- */}
       <QuickActionsBar />
 
-      {/* --- Fila de Métricas Principales --- */}
-      {/* Un solo panel con divisores en vez de 8 tarjetas separadas: a lo
-          ancho, 8 cajas individuales dejaban mucho espacio en blanco a la
-          derecha de cada valor. */}
-      <div className="bg-white border border-gray-200/80 rounded-2xl shadow-xs overflow-hidden">
-        <div className="grid grid-cols-2">
-          {[
-            { key: "activos", icon: Users, color: "indigo" as const, value: stats ? stats.clientesActivos : 0, label: "Clientes Activos", onClick: () => abrirStat("activos") },
-            { key: "nuevos", icon: UserPlus, color: "blue" as const, value: nuevosEsteMes, label: "Nuevos este Mes", onClick: () => abrirStat("nuevos") },
-            { key: "deuda", icon: AlertCircle, color: "rose" as const, value: stats ? stats.cuotasVencidas : 0, label: "Clientes con Deuda", onClick: () => abrirStat("deuda") },
-            { key: "porVencer", icon: Clock3, color: "purple" as const, value: porVencer, label: "Por Vencer (7 días)", onClick: () => abrirStat("porVencer") },
-            { key: "ingresos", icon: DollarSign, color: "emerald" as const, value: stats ? stats.ingresosMesFormatted : "$0", label: "Ingresos del Mes", onClick: () => abrirStat("ingresos") },
-            { key: "asistenciasHoy", icon: Calendar, color: "amber" as const, value: stats ? stats.asistenciasHoy : 0, label: "Asistencias Hoy", onClick: () => abrirStat("asistenciasHoy") },
-            { key: "balance", icon: PiggyBank, color: (stats && stats.balanceMes < 0 ? "rose" : "emerald") as "rose" | "emerald", value: stats ? stats.balanceMesFormatted : "$0", label: "Balance del Mes", onClick: () => navigate("/contabilidad") },
-            { key: "aptoVencido", icon: HeartPulse, color: "orange" as const, value: stats ? stats.aptosMedicosVencidos : 0, label: "Aptos Médicos Vencidos", onClick: () => abrirStat("aptoVencido") },
-          ].map((s, i, arr) => (
-            <StatTile
-              key={s.key}
-              icon={s.icon}
-              color={s.color}
-              value={s.value}
-              label={s.label}
-              onClick={s.onClick}
-              loading={loading}
-              className={cn(
-                i % 2 === 0 && "border-r border-gray-100",
-                i < arr.length - 2 && "border-b border-gray-100"
-              )}
-            />
-          ))}
+      {/* --- Fila principal: sidebar de métricas + resto del contenido --- */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 px-1 lg:items-start">
+        {/* --- Sidebar lateral de métricas: 8 bloques cuadrados en 2 columnas --- */}
+        <div className="lg:col-span-2 lg:self-start bg-white border border-gray-200/80 rounded-2xl shadow-xs overflow-hidden">
+          <div className="grid grid-cols-2">
+            {[
+              { key: "activos", icon: Users, color: "indigo" as const, value: stats ? stats.clientesActivos : 0, label: "Clientes Activos", onClick: () => abrirStat("activos") },
+              { key: "nuevos", icon: UserPlus, color: "blue" as const, value: nuevosEsteMes, label: "Nuevos este Mes", onClick: () => abrirStat("nuevos") },
+              { key: "deuda", icon: AlertCircle, color: "rose" as const, value: stats ? stats.cuotasVencidas : 0, label: "Clientes con Deuda", onClick: () => abrirStat("deuda") },
+              { key: "porVencer", icon: Clock3, color: "purple" as const, value: porVencer, label: "Por Vencer (7 días)", onClick: () => abrirStat("porVencer") },
+              { key: "ingresos", icon: DollarSign, color: "emerald" as const, value: stats ? stats.ingresosMesFormatted : "$0", label: "Ingresos del Mes", onClick: () => abrirStat("ingresos") },
+              { key: "asistenciasHoy", icon: Calendar, color: "amber" as const, value: stats ? stats.asistenciasHoy : 0, label: "Asistencias Hoy", onClick: () => abrirStat("asistenciasHoy") },
+              { key: "balance", icon: PiggyBank, color: (stats && stats.balanceMes < 0 ? "rose" : "emerald") as "rose" | "emerald", value: stats ? stats.balanceMesFormatted : "$0", label: "Balance del Mes", onClick: () => navigate("/contabilidad") },
+              { key: "aptoVencido", icon: HeartPulse, color: "orange" as const, value: stats ? stats.aptosMedicosVencidos : 0, label: "Aptos Médicos Vencidos", onClick: () => abrirStat("aptoVencido") },
+            ].map((s, i, arr) => (
+              <StatTile
+                key={s.key}
+                variant="square"
+                icon={s.icon}
+                color={s.color}
+                value={s.value}
+                label={s.label}
+                onClick={s.onClick}
+                loading={loading}
+                className={cn(
+                  "aspect-square",
+                  i % 2 === 0 && "border-r border-gray-100",
+                  i < arr.length - 2 && "border-b border-gray-100"
+                )}
+              />
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* --- Fila principal de contenido (una sola fila sin scroll en desktop; apilada en mobile/tablet) --- */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 px-1 lg:flex-1 lg:min-h-0 lg:[grid-template-rows:minmax(0,1fr)]">
         <CalendarBentoCard
           key={calendarKey}
           className="lg:col-span-3 lg:min-h-0"
@@ -422,7 +421,7 @@ export default function Dashboard() {
           onSelectDate={setFechaSeleccionada}
         />
 
-        <div className="lg:col-span-5 flex flex-col gap-3 lg:min-h-0">
+        <div className="lg:col-span-3 flex flex-col gap-3 lg:min-h-0">
           <PaymentsGraphBentoCard
             className="lg:flex-1"
             delay={150}
@@ -441,22 +440,22 @@ export default function Dashboard() {
           />
         </div>
 
-        <div className="lg:col-span-4 flex flex-col gap-2 lg:min-h-0">
+        <div className="lg:col-span-4 flex flex-col gap-3 lg:min-h-0">
           <UpcomingSubscriptionsBentoCard
-            className="lg:flex-1 lg:min-h-[122px]"
+            className="lg:min-h-[380px]"
             delay={250}
             loading={loading}
             vencimientos={stats?.proximosVencimientos}
           />
           <LatestPaymentsBentoCard
             pagos={stats?.ultimosPagos ?? []}
-            className="lg:flex-1 lg:min-h-[92px]"
+            className="lg:min-h-[230px]"
             delay={275}
             loading={loading}
           />
           <LatestClientsBentoCard
             clientes={clientesOrdenados}
-            className="lg:flex-1 lg:min-h-[92px]"
+            className="lg:min-h-[300px]"
             delay={300}
             loading={loading}
           />

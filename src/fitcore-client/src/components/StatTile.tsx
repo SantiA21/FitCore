@@ -12,6 +12,7 @@ interface StatTileProps {
   onClick?: () => void;
   loading?: boolean;
   className?: string;
+  variant?: "row" | "square";
 }
 
 const COLOR_MAP: Record<StatTileColor, string> = {
@@ -30,7 +31,36 @@ const COLOR_MAP: Record<StatTileColor, string> = {
  * borde/sombra propios, que dejaba mucho espacio en blanco a la derecha
  * del valor cuando la columna era ancha.
  */
-export default function StatTile({ icon: Icon, value, label, color, onClick, loading, className }: StatTileProps) {
+export default function StatTile({ icon: Icon, value, label, color, onClick, loading, className, variant = "row" }: StatTileProps) {
+  if (variant === "square") {
+    if (loading) {
+      return (
+        <div className={cn("flex flex-col items-center justify-center gap-2 px-2 py-3", className)}>
+          <Skeleton className="w-9 h-9 rounded-xl" />
+          <Skeleton className="h-4 w-12 rounded" />
+          <Skeleton className="h-2 w-16 rounded" />
+        </div>
+      );
+    }
+
+    return (
+      <div
+        onClick={onClick}
+        className={cn(
+          "flex flex-col items-center justify-center text-center gap-1.5 px-2 py-3 animate-fade-in-up",
+          onClick && "cursor-pointer hover:bg-gray-50/80 transition-colors",
+          className
+        )}
+      >
+        <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center shrink-0", COLOR_MAP[color])}>
+          <Icon className="h-4 w-4" />
+        </div>
+        <span className="text-lg font-black text-gray-900 leading-none">{value}</span>
+        <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wide leading-tight">{label}</span>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className={cn("flex items-center gap-2.5 px-3 py-2", className)}>
