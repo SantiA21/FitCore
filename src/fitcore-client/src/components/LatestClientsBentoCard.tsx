@@ -72,7 +72,7 @@ export default function LatestClientsBentoCard({ clientes, className, delay, loa
   const [modalOpen, setModalOpen] = useState(false);
 
   return (
-    <BentoCard className={cn("flex flex-col !p-4", className)} delay={delay}>
+    <BentoCard className={cn("flex flex-col !p-3", className)} delay={delay}>
       <div
         className="flex items-center justify-between mb-2 cursor-pointer group"
         onClick={() => setModalOpen(true)}
@@ -84,7 +84,7 @@ export default function LatestClientsBentoCard({ clientes, className, delay, loa
         <Maximize2 className="h-3 w-3 text-gray-400 group-hover:text-black transition-colors" />
       </div>
 
-      <div className="space-y-1 lg:flex-1">
+      <div className="space-y-1 lg:flex-1 overflow-y-auto min-h-[80px] pr-1">
         {loading ? (
           Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="flex items-center justify-between p-1.5">
@@ -98,7 +98,7 @@ export default function LatestClientsBentoCard({ clientes, className, delay, loa
         ) : clientes.length === 0 ? (
           <p className="text-[10px] text-gray-400 py-4 text-center">Sin clientes registrados</p>
         ) : (
-          clientes.slice(0, 4).map((cliente, i) => (
+          clientes.slice(0, 8).map((cliente, i) => (
             <button
               key={cliente.id}
               type="button"

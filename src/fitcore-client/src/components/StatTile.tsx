@@ -26,11 +26,11 @@ const COLOR_MAP: Record<StatTileColor, string> = {
 export default function StatTile({ icon: Icon, value, label, color, onClick, loading }: StatTileProps) {
   if (loading) {
     return (
-      <div className="bg-white border border-gray-200/80 rounded-2xl p-3.5 shadow-xs flex items-center gap-3">
-        <Skeleton className="w-10 h-10 rounded-xl shrink-0" />
-        <div className="min-w-0 flex-1 space-y-1.5">
+      <div className="bg-white border border-gray-200/80 rounded-xl p-2.5 shadow-xs flex items-center gap-2.5">
+        <Skeleton className="w-8 h-8 rounded-lg shrink-0" />
+        <div className="min-w-0 flex-1 space-y-1">
           <Skeleton className="h-2.5 w-16 rounded" />
-          <Skeleton className="h-5 w-10 rounded" />
+          <Skeleton className="h-4 w-10 rounded" />
         </div>
       </div>
     );
@@ -40,16 +40,16 @@ export default function StatTile({ icon: Icon, value, label, color, onClick, loa
     <div
       onClick={onClick}
       className={cn(
-        "bg-white border border-gray-200/80 rounded-2xl p-3.5 shadow-xs flex items-center gap-3 animate-fade-in-up",
+        "bg-white border border-gray-200/80 rounded-xl p-2.5 shadow-xs flex items-center gap-2.5 animate-fade-in-up",
         onClick && "cursor-pointer hover:border-gray-300 hover:shadow-sm transition-all"
       )}
     >
-      <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", COLOR_MAP[color])}>
-        <Icon className="h-5 w-5" />
+      <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", COLOR_MAP[color])}>
+        <Icon className="h-4 w-4" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider leading-tight truncate">{label}</p>
-        <p className="text-xl font-black text-gray-900 mt-0.5 truncate">{value}</p>
+        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider leading-tight truncate">{label}</p>
+        <p className="text-lg font-black text-gray-900 leading-tight truncate">{value}</p>
       </div>
     </div>
   );

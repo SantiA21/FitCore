@@ -363,7 +363,7 @@ export default function Dashboard() {
   }, [statKey, clientes, estadoCuenta, loadingEstadoCuenta, pagos, loadingPagos, asistenciasHoy, loadingAsistenciasHoy, stats]);
 
   return (
-    <div className="space-y-4 pb-6 max-w-[1800px] mx-auto flex flex-col lg:h-full">
+    <div className="space-y-3 pb-6 max-w-[1800px] mx-auto flex flex-col lg:h-full">
       <div className="flex flex-wrap justify-between items-center gap-2 px-1">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-black tracking-tight">Panel Central</h1>
@@ -379,7 +379,7 @@ export default function Dashboard() {
       <QuickActionsBar />
 
       {/* --- Fila de Métricas Principales --- */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 px-1">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 px-1">
         <StatTile
           icon={Users}
           color="indigo"
@@ -447,7 +447,7 @@ export default function Dashboard() {
       </div>
 
       {/* --- Fila principal de contenido (una sola fila sin scroll en desktop; apilada en mobile/tablet) --- */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 px-1 lg:flex-1 lg:min-h-0">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 px-1 lg:flex-1 lg:min-h-0">
         <CalendarBentoCard
           key={calendarKey}
           className="lg:col-span-3"
@@ -456,7 +456,7 @@ export default function Dashboard() {
           onSelectDate={setFechaSeleccionada}
         />
 
-        <div className="lg:col-span-5 flex flex-col gap-4">
+        <div className="lg:col-span-5 flex flex-col gap-3">
           <PaymentsGraphBentoCard
             className="lg:flex-1"
             delay={150}
@@ -469,7 +469,7 @@ export default function Dashboard() {
           <QuickRegisterBentoCard
             clientes={clientes}
             fechaSeleccionada={fechaSeleccionada}
-            className="bg-primary/5 border-primary/10 lg:flex-1"
+            className="bg-primary/5 border-primary/10 shrink-0"
             delay={200}
             onSuccess={handleRegistrationSuccess}
           />

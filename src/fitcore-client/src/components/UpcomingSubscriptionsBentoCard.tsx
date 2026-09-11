@@ -74,7 +74,7 @@ export default function UpcomingSubscriptionsBentoCard({
   const [modalOpen, setModalOpen] = useState(false);
 
   return (
-    <BentoCard className={cn("flex flex-col !p-4", className)} delay={delay}>
+    <BentoCard className={cn("flex flex-col !p-3", className)} delay={delay}>
       <div
         className="flex items-center justify-between mb-2 cursor-pointer group"
         onClick={() => vencimientos.length > 0 && setModalOpen(true)}
@@ -97,7 +97,7 @@ export default function UpcomingSubscriptionsBentoCard({
         </div>
       </div>
 
-      <div className="space-y-1.5 lg:flex-1 overflow-y-auto max-h-[130px] pr-1">
+      <div className="space-y-1 lg:flex-1 overflow-y-auto min-h-[80px] pr-1">
         {loading ? (
           Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="flex items-center justify-between p-1.5">

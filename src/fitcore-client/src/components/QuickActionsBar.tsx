@@ -7,27 +7,28 @@ interface AccionRapida {
   label: string;
   icon: LucideIcon;
   path: string;
-  primary?: boolean;
+  iconClass: string;
 }
 
 const ACCIONES: AccionRapida[] = [
-  { label: "Nuevo Cliente", icon: UserPlus, path: "/clientes/nuevo", primary: true },
-  { label: "Registrar Pago", icon: CreditCard, path: "/pagos" },
-  { label: "Ver Deudores", icon: MessageCircleWarning, path: "/estado-cuenta?estado=ConDeuda" },
-  { label: "Nuevo Movimiento", icon: Wallet, path: "/contabilidad" },
-  { label: "Exportar Reportes", icon: FileSpreadsheet, path: "/reportes" },
+  { label: "Nuevo Cliente", icon: UserPlus, path: "/clientes/nuevo", iconClass: "bg-indigo-500" },
+  { label: "Registrar Pago", icon: CreditCard, path: "/pagos", iconClass: "bg-emerald-500" },
+  { label: "Ver Deudores", icon: MessageCircleWarning, path: "/estado-cuenta?estado=ConDeuda", iconClass: "bg-rose-500" },
+  { label: "Nuevo Movimiento", icon: Wallet, path: "/contabilidad", iconClass: "bg-orange-500" },
+  { label: "Exportar Reportes", icon: FileSpreadsheet, path: "/reportes", iconClass: "bg-blue-500" },
 ];
 
 /**
  * Barra de accesos directos a las tareas que un dueño de gimnasio hace todo
  * el día — pensada para no tener que salir del dashboard a buscarlas en el
- * menú lateral.
+ * menú lateral. El color del ícono es sólo para escanear más rápido, no
+ * indica jerarquía entre acciones.
  */
 export default function QuickActionsBar() {
   const navigate = useNavigate();
 
   return (
-    <div className="flex items-center gap-2 overflow-x-auto pb-0.5 px-1 -mx-1">
+    <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 px-1 -mx-1">
       {ACCIONES.map((accion) => {
         const Icon = accion.icon;
         return (
@@ -35,14 +36,11 @@ export default function QuickActionsBar() {
             key={accion.path}
             type="button"
             onClick={() => navigate(accion.path)}
-            className={cn(
-              "flex items-center gap-1.5 shrink-0 px-3 py-2 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all active:scale-95 cursor-pointer",
-              accion.primary
-                ? "bg-black text-white hover:bg-black/90 shadow-sm"
-                : "bg-white border border-gray-200/80 text-gray-600 hover:border-gray-300 hover:text-black shadow-xs"
-            )}
+            className="flex items-center gap-2 shrink-0 pl-1.5 pr-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all active:scale-95 cursor-pointer bg-white border border-gray-200/80 text-gray-700 hover:border-gray-300 hover:shadow-sm shadow-xs"
           >
-            <Icon className="h-3.5 w-3.5 shrink-0" />
+            <span className={cn("flex items-center justify-center w-6 h-6 rounded-lg text-white shrink-0", accion.iconClass)}>
+              <Icon className="h-3.5 w-3.5" />
+            </span>
             {accion.label}
           </button>
         );
