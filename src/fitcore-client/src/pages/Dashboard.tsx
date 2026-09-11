@@ -266,7 +266,7 @@ export default function Dashboard() {
             title: v.nombre,
             subtitle: v.plan,
             right: v.diasRestantes === 0 ? "Hoy" : v.diasRestantes === 1 ? "Mañana" : `${v.diasRestantes}d`,
-            rightVariant: (v.diasRestantes <= 2 ? "danger" : "warning") as const,
+            rightVariant: v.diasRestantes <= 2 ? ("danger" as const) : ("warning" as const),
           })),
           loading: false,
           emptyText: "Todo al día",

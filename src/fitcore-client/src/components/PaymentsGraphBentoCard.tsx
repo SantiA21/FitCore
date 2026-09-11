@@ -74,7 +74,7 @@ export default function PaymentsGraphBentoCard({
     id: idx,
     title: new Date(s.fecha + "T00:00:00").toLocaleDateString("es-AR", { weekday: "long", day: "2-digit", month: "2-digit" }),
     right: formatMonto(s.monto),
-    rightVariant: (s.monto > 0 ? "success" : "muted") as const,
+    rightVariant: s.monto > 0 ? ("success" as const) : ("muted" as const),
   }));
 
   return (
