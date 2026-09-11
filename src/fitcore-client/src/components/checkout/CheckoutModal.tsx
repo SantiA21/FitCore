@@ -356,8 +356,6 @@ export default function CheckoutModal({
           planId: plan.id,
           ultimos4: cleanNum.slice(-4),
           franquicia: cardBrand.name,
-          titular: tarjeta.titular.trim(),
-          vencimiento: tarjeta.vencimiento,
         }),
       });
 

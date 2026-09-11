@@ -77,11 +77,15 @@ builder.Services.AddScoped<TokenService>();
 builder.Services.AddHttpClient<MercadoPagoService>();
 
 // CORS
+var origenes = builder.Configuration
+    .GetSection("Cors:Origins").Get<string[]>()
+    ?? new[] { "http://localhost:5173" };
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("FitCorePolicy", policy =>
     {
-        policy.WithOrigins("http://localhost:5173", "https://fit-core-delta.vercel.app")
+        policy.WithOrigins(origenes)
               .AllowAnyHeader()
               .AllowAnyMethod()
               .WithExposedHeaders("Content-Disposition");

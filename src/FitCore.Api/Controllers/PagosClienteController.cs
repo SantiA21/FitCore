@@ -109,43 +109,25 @@ public class PagosClienteController : ControllerBase
 
         var ultimos4 = dto.Ultimos4?.Trim() ?? "";
         if (ultimos4.Length != 4 || !ultimos4.All(char.IsDigit))
-            return BadRequest(new { mensaje = "Los últimos 4 dígitos de la tarjeta son inválidos." });
-
-        if (string.IsNullOrWhiteSpace(dto.Titular))
-            return BadRequest(new { mensaje = "El nombre del titular es obligatorio." });
-
-        if (string.IsNullOrWhiteSpace(dto.Vencimiento))
-            return BadRequest(new { mensaje = "La fecha de vencimiento es obligatoria." });
-
-        var parts = dto.Vencimiento.Trim().Split('/');
-        if (parts.Length != 2 || !int.TryParse(parts[0], out int mes) || !int.TryParse(parts[1], out int anio2Dig))
-            return BadRequest(new { mensaje = "Formato de vencimiento inválido. Utilice MM/AA." });
-
-        if (mes < 1 || mes > 12)
-            return BadRequest(new { mensaje = "El mes de vencimiento debe estar entre 01 y 12." });
-
-        int anioCompleto = 2000 + anio2Dig;
-        var hoy = DateTime.UtcNow;
-        if (anioCompleto < hoy.Year || (anioCompleto == hoy.Year && mes < hoy.Month))
-            return BadRequest(new { mensaje = "La tarjeta se encuentra vencida." });
+            return BadRequest(new { mensaje = "Datos de tarjeta inválidos." });
 
         var plan = await _context.Planes.FirstOrDefaultAsync(p => p.Id == dto.PlanId);
         if (plan is null) return NotFound(new { mensaje = "Plan no encontrado." });
 
-        // Activamos membresía
         var membresiaRes = await _membresiaService.Crear(userId, plan.Id);
 
         var franquicia = string.IsNullOrWhiteSpace(dto.Franquicia) ? "Tarjeta" : dto.Franquicia.Trim();
+        var hoy = DateTime.UtcNow;
 
         var pago = new Pago
         {
-            UserId = userId,
+            UserId      = userId,
             MembresiaId = membresiaRes.Id,
-            Monto = plan.Precio,
-            Fecha = hoy,
-            Metodo = $"Tarjeta ({franquicia})",
-            Nota = $"{franquicia} terminada en {ultimos4} - Titular: {dto.Titular.Trim()}",
-            PeriodoMes = hoy.Month,
+            Monto       = plan.Precio,
+            Fecha       = hoy,
+            Metodo      = $"Tarjeta ({franquicia})",
+            Nota        = $"{franquicia} terminada en {ultimos4}",
+            PeriodoMes  = hoy.Month,
             PeriodoAnio = hoy.Year,
         };
 
