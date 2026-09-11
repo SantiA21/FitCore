@@ -5,11 +5,9 @@ import { apiFetch } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import StatTile from "@/components/StatTile";
 import CalendarBentoCard from "@/components/CalendarBentoCard";
-import LatestClientsBentoCard from "@/components/LatestClientsBentoCard";
-import LatestPaymentsBentoCard from "@/components/LatestPaymentsBentoCard";
 import QuickRegisterBentoCard from "@/components/QuickRegisterBentoCard";
 import PaymentsGraphBentoCard from "@/components/PaymentsGraphBentoCard";
-import UpcomingSubscriptionsBentoCard from "@/components/UpcomingSubscriptionsBentoCard";
+import RecentActivityTabsCard from "@/components/RecentActivityTabsCard";
 import QuickActionsBar from "@/components/QuickActionsBar";
 import StatDetailDialog, { type DetailRow } from "@/components/StatDetailDialog";
 
@@ -442,23 +440,13 @@ export default function Dashboard() {
         </div>
 
         <div className="lg:col-span-4 flex flex-col gap-2 lg:min-h-0">
-          <UpcomingSubscriptionsBentoCard
-            className="lg:flex-1 lg:min-h-[122px]"
+          <RecentActivityTabsCard
+            className="lg:flex-1"
             delay={250}
             loading={loading}
             vencimientos={stats?.proximosVencimientos}
-          />
-          <LatestPaymentsBentoCard
             pagos={stats?.ultimosPagos ?? []}
-            className="lg:flex-1 lg:min-h-[92px]"
-            delay={275}
-            loading={loading}
-          />
-          <LatestClientsBentoCard
             clientes={clientesOrdenados}
-            className="lg:flex-1 lg:min-h-[92px]"
-            delay={300}
-            loading={loading}
           />
         </div>
       </div>
