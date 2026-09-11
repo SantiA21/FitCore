@@ -81,27 +81,27 @@ export default function DashboardCliente() {
 
   const ultimaAsistencia = asistencias.length > 0 ? asistencias[0] : null;
 
-  const anuncios = [
+  // Consejos permanentes (no son anuncios reales del gimnasio: evitamos fechas
+  // o hechos específicos inventados que no aplicarían a todos los gimnasios
+  // que usan la plataforma).
+  const tips = [
     {
       id: 1,
-      titulo: "¡Nueva zona de pesas libres habilitada!",
-      detalle: "Incorporamos mancuernas de hasta 40kg, dos nuevos bancos regulables y racks olímpicos.",
-      fecha: "Hace 2 días",
-      tag: "Equipamiento"
+      titulo: "Reservá las máquinas solo mientras las usás",
+      detalle: "Así hay lugar para todos, sobre todo en el horario pico.",
+      tag: "Convivencia"
     },
     {
       id: 2,
-      titulo: "Mantenimiento y lubricación de poleas",
-      detalle: "Se realizó el service preventivo de todas las estaciones de poleas y cables de la sala.",
-      fecha: "Esta semana",
-      tag: "Mantenimiento"
+      titulo: "Consultá a los profes antes de sumar peso",
+      detalle: "Te ayudan a progresar de forma segura y sin lesiones.",
+      tag: "Entrenamiento"
     },
     {
       id: 3,
-      titulo: "Horarios para el próximo feriado",
-      detalle: "La sala de musculación y cardio abrirá en horario especial de 09:00 a 14:00 hs.",
-      fecha: "Importante",
-      tag: "Horarios"
+      titulo: "Hidratate antes, durante y después de entrenar",
+      detalle: "Mejora tu rendimiento y tu recuperación.",
+      tag: "Salud"
     }
   ];
 
@@ -260,7 +260,7 @@ export default function DashboardCliente() {
               {membresia?.planNombre || "Pase Libre"}
             </p>
             <p className="text-[11px] text-gray-500 mt-1 flex items-center gap-1">
-              <MapPin className="w-3.5 h-3.5 text-gray-400" /> Sede Central • Lun a Vie hasta 23hs
+              <MapPin className="w-3.5 h-3.5 text-gray-400" /> {settings.nombreGimnasio ?? "Tu gimnasio"}
             </p>
           </div>
         </div>
@@ -274,14 +274,10 @@ export default function DashboardCliente() {
             <div className="space-y-0.5">
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-orange-600" />
-                <h3 className="text-base font-bold text-gray-900">Horarios de Sala y Concurrencia</h3>
+                <h3 className="text-base font-bold text-gray-900">Horarios de Referencia</h3>
               </div>
-              <p className="text-xs text-gray-400">Planificá tu entrenamiento para encontrar máquinas y bancos libres</p>
+              <p className="text-xs text-gray-400">Confirmá el horario vigente con recepción — puede variar por sede o temporada</p>
             </div>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              Abierto ahora
-            </span>
           </div>
 
           {/* Horarios habituales de apertura */}
@@ -310,9 +306,12 @@ export default function DashboardCliente() {
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-orange-600" />
               <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
-                Afluencia estimada por franja horaria
+                Franjas horarias orientativas
               </h4>
             </div>
+            <p className="text-[11px] text-gray-400 -mt-2">
+              Guía general de referencia — la afluencia real puede variar según el día.
+            </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               <div className="p-3 rounded-2xl bg-emerald-50/50 border border-emerald-100/70 flex items-center justify-between">
@@ -368,21 +367,18 @@ export default function DashboardCliente() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Bell className="w-4 h-4 text-orange-600" />
-              <h3 className="text-base font-bold text-gray-900">Novedades del Gym</h3>
+              <h3 className="text-base font-bold text-gray-900">Tips para tu Entrenamiento</h3>
             </div>
-            <p className="text-xs text-gray-400 mb-5">Comunicaciones del staff, mejoras y avisos oficiales</p>
+            <p className="text-xs text-gray-400 mb-5">Consejos generales — consultá con recepción por avisos puntuales del gimnasio</p>
 
             <div className="space-y-3.5">
-              {anuncios.map((a) => (
-                <div key={a.id} className="p-4 rounded-2xl border border-gray-100 bg-gray-50/50 space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <Badge className="bg-zinc-100 text-zinc-700 hover:bg-zinc-100 text-[10px] font-bold border-0">
-                      {a.tag}
-                    </Badge>
-                    <span className="text-[10px] text-gray-400 font-medium">{a.fecha}</span>
-                  </div>
-                  <h4 className="text-xs font-bold text-gray-900">{a.titulo}</h4>
-                  <p className="text-xs text-gray-500 leading-relaxed">{a.detalle}</p>
+              {tips.map((t) => (
+                <div key={t.id} className="p-4 rounded-2xl border border-gray-100 bg-gray-50/50 space-y-1.5">
+                  <Badge className="bg-zinc-100 text-zinc-700 hover:bg-zinc-100 text-[10px] font-bold border-0">
+                    {t.tag}
+                  </Badge>
+                  <h4 className="text-xs font-bold text-gray-900">{t.titulo}</h4>
+                  <p className="text-xs text-gray-500 leading-relaxed">{t.detalle}</p>
                 </div>
               ))}
             </div>

@@ -234,6 +234,7 @@ public class PagoService
                 UserId = c.Id,
                 Nombre = $"{c.Nombre} {c.Apellido}",
                 Email = c.Email ?? string.Empty,
+                Telefono = c.Telefono,
                 MembresiaId = membresia?.Id,
                 PlanNombre = membresia?.Plan?.Nombre,
                 PlanPrecio = membresia?.Plan?.Precio,

@@ -5,6 +5,7 @@ public class EstadoCuentaDto
     public string UserId { get; set; } = string.Empty;
     public string Nombre { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+    public string? Telefono { get; set; }
     public int? MembresiaId { get; set; }
     public string? PlanNombre { get; set; }
     public decimal? PlanPrecio { get; set; }

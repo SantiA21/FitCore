@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Plus, Pencil, UserX, UserCheck, Trash2, CalendarX, TrendingUp, Phone, Mail, Users } from "lucide-react";
+import { Search, Plus, Pencil, UserX, UserCheck, Trash2, CalendarX, TrendingUp, Phone, Mail, Users, MessageCircle, HeartPulse } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,8 @@ import {
   SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { apiFetch } from "@/lib/api";
+import { buildWhatsAppUrl } from "@/lib/utils";
+import { useGymSettings } from "@/context/GymSettingsContext";
 
 type Cliente = {
   id: string;
@@ -32,7 +34,19 @@ type Cliente = {
   planId: number | null;
   planNombre: string | null;
   membresiaVence: string | null;
+  aptoMedicoVence: string | null;
 };
+
+function estadoApto(fechaVence: string | null): { texto: string; className: string } | null {
+  if (!fechaVence) return null;
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const vence = new Date(fechaVence);
+  if (vence.getTime() < hoy.getTime()) {
+    return { texto: "Apto médico vencido", className: "text-red-500 font-semibold" };
+  }
+  return null;
+}
 
 type Plan = {
   id: number;
@@ -124,6 +138,7 @@ export default function Clientes() {
 
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { settings } = useGymSettings();
 
   useEffect(() => {
     Promise.all([
@@ -386,6 +401,11 @@ export default function Clientes() {
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
             {clientesFiltrados.map((c, i) => {
               const d = diasRestantes(c.membresiaVence);
+              const apto = estadoApto(c.aptoMedicoVence);
+              const waUrl = buildWhatsAppUrl(
+                c.telefono,
+                `Hola ${c.nombre}! Te escribimos desde ${settings.nombreGimnasio ?? "el gimnasio"}.`
+              );
               return (
                 <div
                   key={c.id}
@@ -412,12 +432,29 @@ export default function Clientes() {
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2 text-xs text-gray-600">
                       <Phone className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                      <span className="truncate">{c.telefono || "Sin teléfono"}</span>
+                      <span className="truncate flex-1">{c.telefono || "Sin teléfono"}</span>
+                      {waUrl && (
+                        <a
+                          href={waUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="Contactar por WhatsApp"
+                          className="shrink-0 text-emerald-600 hover:text-emerald-700"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                        </a>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 text-xs text-gray-600">
                       <Mail className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                       <span className="truncate">{c.email}</span>
                     </div>
+                    {apto && (
+                      <div className={`flex items-center gap-2 text-[11px] ${apto.className}`}>
+                        <HeartPulse className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">{apto.texto}</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="pt-3 border-t border-gray-100 space-y-3">

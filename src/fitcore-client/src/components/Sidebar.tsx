@@ -17,13 +17,17 @@ interface NavItem {
   path: string;
 }
 
+// Orden pensado según la frecuencia de uso real en el día a día del gimnasio:
+// primero lo que se usa todo el día (check-in, socios, cobros), después lo
+// administrativo que se revisa cada tanto (contabilidad, reportes) y al final
+// lo que casi no se toca (configuración).
 const adminNavItems: NavItem[] = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard-admin" },
+  { label: "Asistencias", icon: Calendar, path: "/asistencias" },
   { label: "Clientes", icon: Users, path: "/clientes" },
-  { label: "Planes", icon: ClipboardList, path: "/planes-admin" },
   { label: "Pagos", icon: CreditCard, path: "/pagos" },
   { label: "Estado de cuenta", icon: ShieldCheck, path: "/estado-cuenta" },
-  { label: "Asistencias", icon: Calendar, path: "/asistencias" },
+  { label: "Planes", icon: ClipboardList, path: "/planes-admin" },
   { label: "Contabilidad", icon: Wallet, path: "/contabilidad" },
   { label: "Reportes", icon: FileSpreadsheet, path: "/reportes" },
   { label: "Configuración", icon: Settings, path: "/configuracion" },

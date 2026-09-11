@@ -176,7 +176,8 @@ public class UsuariosController : ControllerBase
         u.Categoria,
         membresiaActiva?.PlanId,
         membresiaActiva?.Plan?.Nombre,
-        membresiaActiva?.FechaFin
+        membresiaActiva?.FechaFin,
+        u.AptoMedicoVence
     );
 }
 
@@ -193,7 +194,8 @@ public record UsuarioDto(
     FitCore.Domain.Entities.Categoria Categoria,
     int? PlanId,
     string? PlanNombre,
-    DateTime? MembresiaVence
+    DateTime? MembresiaVence,
+    DateOnly? AptoMedicoVence
 );
 
 public record CreateUsuarioDto(

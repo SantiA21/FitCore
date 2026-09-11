@@ -198,7 +198,6 @@ export default function MisAsistencias() {
                     <p className="text-xs text-gray-400 flex items-center gap-2 mt-0.5">
                       <Clock className="w-3.5 h-3.5" />
                       Hora de ingreso: <span className="font-semibold text-gray-700">{item.horaIngreso.slice(0, 5)} hs</span>
-                      <span>• Sede Central</span>
                     </p>
                   </div>
                 </div>

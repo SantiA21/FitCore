@@ -252,7 +252,7 @@ export default function Dashboard() {
           })),
           loading: loadingEstadoCuenta,
           emptyText: "Sin clientes con deuda",
-          navigateTo: "/estado-cuenta",
+          navigateTo: "/estado-cuenta?estado=ConDeuda",
           navigateLabel: "Ir a Estado de Cuenta",
         };
       }

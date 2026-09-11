@@ -1,0 +1,162 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Search, ChevronDown, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+export type ClienteOpcion = {
+  id: string | number;
+  nombre: string;
+  apellido?: string | null;
+};
+
+interface ClienteComboboxProps {
+  clientes: ClienteOpcion[];
+  value: string;
+  onChange: (id: string) => void;
+  placeholder?: string;
+  emptyLabel?: string;
+  disabled?: boolean;
+  className?: string;
+  id?: string;
+}
+
+/**
+ * Selector de cliente con búsqueda en vivo. Reemplaza a los <select>/Select
+ * comunes en los flujos de alta frecuencia (check-in, registrar pago) donde
+ * un gimnasio con muchos socios vuelve inutilizable un dropdown sin filtro.
+ */
+export default function ClienteCombobox({
+  clientes,
+  value,
+  onChange,
+  placeholder = "Buscar cliente por nombre...",
+  emptyLabel = "No se encontraron clientes",
+  disabled,
+  className,
+  id,
+}: ClienteComboboxProps) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [highlight, setHighlight] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const seleccionado = useMemo(
+    () => clientes.find((c) => String(c.id) === String(value)) ?? null,
+    [clientes, value]
+  );
+
+  const nombreCompleto = (c: ClienteOpcion) => `${c.nombre} ${c.apellido ?? ""}`.trim();
+
+  const filtrados = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return clientes;
+    return clientes.filter((c) => nombreCompleto(c).toLowerCase().includes(q));
+  }, [clientes, query]);
+
+  useEffect(() => {
+    setHighlight(0);
+  }, [query, open]);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setQuery("");
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const seleccionar = (c: ClienteOpcion) => {
+    onChange(String(c.id));
+    setOpen(false);
+    setQuery("");
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!open && (e.key === "ArrowDown" || e.key === "Enter")) {
+      setOpen(true);
+      return;
+    }
+    if (!open) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlight((h) => Math.min(h + 1, filtrados.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlight((h) => Math.max(h - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const c = filtrados[highlight];
+      if (c) seleccionar(c);
+    } else if (e.key === "Escape") {
+      setOpen(false);
+      setQuery("");
+      inputRef.current?.blur();
+    }
+  };
+
+  return (
+    <div ref={containerRef} className={cn("relative", className)}>
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+        <input
+          id={id}
+          ref={inputRef}
+          type="text"
+          disabled={disabled}
+          placeholder={seleccionado ? nombreCompleto(seleccionado) : placeholder}
+          value={open ? query : ""}
+          onFocus={() => setOpen(true)}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={handleKeyDown}
+          className={cn(
+            "flex h-10 w-full rounded-lg border border-gray-300 bg-white pl-9 pr-16 py-2 text-sm font-normal text-gray-900 placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:border-[#f97316] disabled:cursor-not-allowed disabled:opacity-50",
+            !open && seleccionado && "placeholder:text-gray-900 placeholder:font-medium"
+          )}
+        />
+        {seleccionado && !open && (
+          <button
+            type="button"
+            aria-label="Limpiar selección"
+            disabled={disabled}
+            onClick={() => {
+              onChange("");
+              setQuery("");
+            }}
+            className="absolute right-8 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-600"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
+        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+      </div>
+
+      {open && !disabled && (
+        <div className="absolute z-50 mt-1 w-full max-h-64 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg py-1">
+          {filtrados.length === 0 ? (
+            <p className="px-3 py-3 text-xs text-gray-400 text-center">{emptyLabel}</p>
+          ) : (
+            filtrados.map((c, i) => (
+              <button
+                key={c.id}
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => seleccionar(c)}
+                className={cn(
+                  "w-full text-left px-3 py-2 text-sm truncate",
+                  i === highlight ? "bg-orange-50 text-orange-700" : "text-gray-700 hover:bg-gray-50",
+                  String(c.id) === String(value) && "font-semibold"
+                )}
+              >
+                {nombreCompleto(c)}
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

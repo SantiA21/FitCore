@@ -13,13 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import ClienteCombobox from "@/components/ui/client-combobox";
 import { apiFetch } from "@/lib/api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -404,22 +398,14 @@ export default function Asistencias() {
           <div className="mt-4 space-y-4">
             <div className="space-y-2">
               <Label htmlFor="cliente">Cliente</Label>
-              <Select
+              <ClienteCombobox
+                id="cliente"
+                clientes={clientes}
                 value={formClienteId}
-                onValueChange={setFormClienteId}
+                onChange={setFormClienteId}
                 disabled={saving}
-              >
-                <SelectTrigger id="cliente">
-                  <SelectValue placeholder="Seleccioná un cliente" />
-                </SelectTrigger>
-                <SelectContent position="popper" className="max-h-60 overflow-y-auto">
-                  {clientes.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Buscá por nombre..."
+              />
             </div>
 
             <div className="space-y-2">

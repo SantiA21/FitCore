@@ -1,13 +1,7 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Plus, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import ClienteCombobox from "@/components/ui/client-combobox";
 import { apiFetch } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
 import BentoCard from "./BentoCard";
@@ -38,6 +32,8 @@ export default function QuickRegisterBentoCard({
   const [formClienteId, setFormClienteId] = useState("");
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
+
+  const clientesActivos = useMemo(() => clientes.filter((c) => c.activo), [clientes]);
 
   const handleRegistrar = async () => {
     if (!formClienteId) return;
@@ -97,39 +93,15 @@ export default function QuickRegisterBentoCard({
       <div className="flex flex-col gap-3 lg:flex-1">
         <div className="space-y-1.5">
           <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Seleccionar Cliente</label>
-          <Select
+          <ClienteCombobox
+            clientes={clientesActivos}
             value={formClienteId}
-            onValueChange={setFormClienteId}
+            onChange={setFormClienteId}
             disabled={saving}
-          >
-            <SelectTrigger className="h-10 text-[12px] rounded-xl border-gray-100 bg-white shadow-sm px-4">
-              <SelectValue>
-                {formClienteId
-                  ? (() => {
-                      const c = clientes.find(x => String(x.id) === formClienteId);
-                      return c ? `${c.nombre} ${c.apellido || ''}`.trim() : "Buscar cliente...";
-                    })()
-                  : <span className="text-gray-400">Buscar cliente...</span>
-                }
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent
-              className="rounded-2xl border-gray-100 shadow-2xl p-2"
-              position="popper"    // fuerza posicionamiento relativo al trigger
-              sideOffset={4}
-              style={{ zIndex: 9999 }}  // por si hay stacking context issues
-            >
-              {clientes.filter(c => c.activo).length > 0 ? (
-                clientes.filter(c => c.activo).map((c) => (
-                  <SelectItem key={c.id} value={String(c.id)} className="text-[12px] py-3 px-4 cursor-pointer rounded-xl focus:bg-gray-50">
-                    {c.nombre} {c.apellido || ''}
-                  </SelectItem>
-                ))
-              ) : (
-                <p className="p-4 text-[11px] text-gray-400 text-center italic">No hay clientes activos</p>
-              )}
-            </SelectContent>
-          </Select>
+            placeholder="Buscar cliente..."
+            emptyLabel="No hay clientes activos"
+            className="[&_input]:h-10 [&_input]:text-[12px] [&_input]:rounded-xl [&_input]:border-gray-100 [&_input]:shadow-sm [&_input]:px-4 [&_input]:pl-9"
+          />
         </div>
 
         <Button

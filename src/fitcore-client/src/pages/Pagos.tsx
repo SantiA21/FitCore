@@ -1,7 +1,16 @@
-import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Loader2, Search } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import ClienteCombobox from "@/components/ui/client-combobox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const METODOS = ["Efectivo", "Débito", "Crédito", "Transferencia"];
 
@@ -61,6 +70,7 @@ export default function Pagos() {
   const [pagosLoading, setPagosLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [busquedaHistorial, setBusquedaHistorial] = useState("");
 
   useEffect(() => {
     fetchUsers();
@@ -136,6 +146,12 @@ export default function Pagos() {
     }
   }
 
+  const pagosFiltrados = useMemo(() => {
+    const q = busquedaHistorial.trim().toLowerCase();
+    if (!q) return pagos;
+    return pagos.filter((p) => p.clienteNombre.toLowerCase().includes(q));
+  }, [pagos, busquedaHistorial]);
+
   const totalHoy = pagos
     .filter((p) => new Date(p.fecha).toDateString() === new Date().toDateString())
     .reduce((acc, p) => acc + p.monto, 0);
@@ -203,52 +219,49 @@ export default function Pagos() {
           {/* Cliente */}
           <div className="space-y-1">
             <label className="text-sm text-gray-600">Cliente</label>
-            <select
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-black bg-white focus:outline-none focus:ring-2 focus:ring-black/10"
+            <ClienteCombobox
+              clientes={users}
               value={form.userId}
-              onChange={(e) => setForm((f) => ({ ...f, userId: e.target.value }))}
-            >
-              <option value="">— Seleccioná un cliente —</option>
-              {users.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.nombre} {u.apellido}
-                </option>
-              ))}
-            </select>
+              onChange={(id) => setForm((f) => ({ ...f, userId: id }))}
+              placeholder="Buscá por nombre..."
+            />
           </div>
 
           {/* Período */}
           <div className="space-y-1">
             <label className="text-sm text-gray-600">Período</label>
-            <select
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-black bg-white focus:outline-none focus:ring-2 focus:ring-black/10"
+            <Select
               value={`${form.periodoMes}-${form.periodoAnio}`}
-              onChange={(e) => {
-                const [mes, anio] = e.target.value.split("-").map(Number);
+              onValueChange={(val) => {
+                const [mes, anio] = val.split("-").map(Number);
                 setForm((f) => ({ ...f, periodoMes: mes, periodoAnio: anio }));
               }}
             >
-              {PERIODOS.map((p) => (
-                <option key={`${p.mes}-${p.anio}`} value={`${p.mes}-${p.anio}`}>
-                  {p.label}{p === PERIODOS[0] ? " (mes actual)" : ""}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="rounded-lg"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {PERIODOS.map((p) => (
+                  <SelectItem key={`${p.mes}-${p.anio}`} value={`${p.mes}-${p.anio}`}>
+                    {p.label}{p === PERIODOS[0] ? " (mes actual)" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Método */}
           <div className="space-y-1">
             <label className="text-sm text-gray-600">Método de pago</label>
-            <select
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-black bg-white focus:outline-none focus:ring-2 focus:ring-black/10"
+            <Select
               value={form.metodo}
-              onChange={(e) => setForm((f) => ({ ...f, metodo: e.target.value }))}
+              onValueChange={(val) => setForm((f) => ({ ...f, metodo: val }))}
             >
-              <option value="">— Seleccioná un método —</option>
-              {METODOS.map((m) => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
+              <SelectTrigger className="rounded-lg"><SelectValue placeholder="Seleccioná un método" /></SelectTrigger>
+              <SelectContent>
+                {METODOS.map((m) => (
+                  <SelectItem key={m} value={m}>{m}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Monto */}
@@ -308,8 +321,17 @@ export default function Pagos() {
 
       {/* Tabla historial */}
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100">
+        <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <h2 className="text-base font-semibold text-black">Historial de pagos</h2>
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Buscar por cliente..."
+              value={busquedaHistorial}
+              onChange={(e) => setBusquedaHistorial(e.target.value)}
+              className="pl-9 rounded-lg h-9 text-sm"
+            />
+          </div>
         </div>
 
         {pagosLoading ? (
@@ -321,6 +343,10 @@ export default function Pagos() {
         ) : pagos.length === 0 ? (
           <p className="text-sm text-gray-400 px-6 py-8 text-center">
             No hay pagos registrados aún.
+          </p>
+        ) : pagosFiltrados.length === 0 ? (
+          <p className="text-sm text-gray-400 px-6 py-8 text-center">
+            Ningún pago coincide con "{busquedaHistorial}".
           </p>
         ) : (
           <div className="overflow-x-auto">
@@ -336,7 +362,7 @@ export default function Pagos() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {pagos.map((p, i) => (
+                {pagosFiltrados.map((p, i) => (
                   <tr
                     key={p.id}
                     className="hover:bg-gray-50 transition-colors animate-fade-in-up"

@@ -1,5 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
-import { Plus, Check } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { Plus, Check, MessageCircle } from "lucide-react";
+import { buildWhatsAppUrl } from "@/lib/utils";
+import { useGymSettings } from "@/context/GymSettingsContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,6 +42,7 @@ type EstadoCuenta = {
   userId: string;
   nombre: string;
   email: string;
+  telefono?: string | null;
   membresiaId?: number | null;
   planNombre: string | null;
   planPrecio?: number | null;
@@ -66,10 +70,16 @@ function TableRowSkeleton({ cols }: { cols: number }) {
 }
 
 export default function EstadoCuenta() {
+  const [searchParams] = useSearchParams();
+  const { settings } = useGymSettings();
+
   const [clientes, setClientes] = useState<EstadoCuenta[]>([]);
   const [planes, setPlanes] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filtroEstado, setFiltroEstado] = useState("Todos");
+  const [filtroEstado, setFiltroEstado] = useState(() => {
+    const estadoInicial = searchParams.get("estado");
+    return estadoInicial && estadoInicial in ESTADO_CONFIG ? estadoInicial : "Todos";
+  });
   const [busqueda, setBusqueda] = useState("");
 
   // Modal pago
@@ -381,6 +391,13 @@ export default function EstadoCuenta() {
             ) : (
               clientesFiltrados.map((c, i) => {
                 const cfg = ESTADO_CONFIG[c.estadoGeneral];
+                const debeRecordar = c.estadoGeneral === "ConDeuda" || c.estadoGeneral === "PendienteMesActual";
+                const waUrl = debeRecordar
+                  ? buildWhatsAppUrl(
+                      c.telefono,
+                      `Hola ${c.nombre.split(" ")[0]}! Te escribimos desde ${settings.nombreGimnasio ?? "el gimnasio"} para recordarte que tenés la cuota${c.estadoGeneral === "ConDeuda" ? " pendiente de meses anteriores" : " de este mes"} sin abonar. ¡Te esperamos!`
+                    )
+                  : null;
                 return (
                   <TableRow
                     key={c.userId}
@@ -397,9 +414,23 @@ export default function EstadoCuenta() {
                       <span className="text-sm">{c.planNombre ?? <span className="text-gray-400">—</span>}</span>
                     </TableCell>
                     <TableCell>
-                      <span className={`text-xs font-medium px-2 py-1 rounded-full ${cfg.className}`}>
-                        {cfg.label}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs font-medium px-2 py-1 rounded-full ${cfg.className}`}>
+                          {cfg.label}
+                        </span>
+                        {waUrl && (
+                          <a
+                            href={waUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={`Recordar pago a ${c.nombre} por WhatsApp`}
+                            title="Recordar pago por WhatsApp"
+                            className="text-emerald-600 hover:text-emerald-700"
+                          >
+                            <MessageCircle className="h-3.5 w-3.5" />
+                          </a>
+                        )}
+                      </div>
                     </TableCell>
                     {c.periodos.map((p) => (
                       <TableCell key={`${p.mes}-${p.anio}`} className="text-center">
