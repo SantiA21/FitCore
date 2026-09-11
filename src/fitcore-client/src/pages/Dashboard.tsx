@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { Users, AlertCircle, DollarSign, Calendar, UserPlus, Clock3 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Users, AlertCircle, DollarSign, Calendar, UserPlus, Clock3, PiggyBank, HeartPulse } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import StatTile from "@/components/StatTile";
 import CalendarBentoCard from "@/components/CalendarBentoCard";
 import LatestClientsBentoCard from "@/components/LatestClientsBentoCard";
+import LatestPaymentsBentoCard from "@/components/LatestPaymentsBentoCard";
 import QuickRegisterBentoCard from "@/components/QuickRegisterBentoCard";
 import PaymentsGraphBentoCard from "@/components/PaymentsGraphBentoCard";
 import UpcomingSubscriptionsBentoCard from "@/components/UpcomingSubscriptionsBentoCard";
+import QuickActionsBar from "@/components/QuickActionsBar";
 import StatDetailDialog, { type DetailRow } from "@/components/StatDetailDialog";
 
 type Cliente = {
@@ -18,6 +21,7 @@ type Cliente = {
   fechaAlta: string;
   activo: boolean;
   planNombre?: string | null;
+  aptoMedicoVence?: string | null;
 };
 
 type SerieItem = {
@@ -35,6 +39,14 @@ type ProximoVencimiento = {
   diasRestantes: number;
 };
 
+type PagoReciente = {
+  id: number;
+  clienteNombre: string;
+  monto: number;
+  metodo: string;
+  fecha: string;
+};
+
 type DashboardStats = {
   clientesActivos: number;
   cuotasVencidas: number;
@@ -45,6 +57,10 @@ type DashboardStats = {
   totalSemana: number;
   totalSemanaFormatted: string;
   porcentajeCrecimiento: number;
+  balanceMes: number;
+  balanceMesFormatted: string;
+  aptosMedicosVencidos: number;
+  ultimosPagos: PagoReciente[];
   proximosVencimientos: ProximoVencimiento[];
 };
 
@@ -71,7 +87,7 @@ type AsistenciaDetalle = {
   horaIngreso: string;
 };
 
-type StatKey = "activos" | "nuevos" | "deuda" | "porVencer" | "ingresos" | "asistenciasHoy";
+type StatKey = "activos" | "nuevos" | "deuda" | "porVencer" | "ingresos" | "asistenciasHoy" | "aptoVencido";
 
 function toDateOnly(date: Date): string {
   const year = date.getFullYear();
@@ -85,6 +101,7 @@ function formatMonto(n: number): string {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -312,6 +329,27 @@ export default function Dashboard() {
           navigateLabel: "Ir a Asistencias",
         };
       }
+      case "aptoVencido": {
+        const hoy = new Date();
+        const vencidos = clientes.filter(
+          (c) => c.activo && c.aptoMedicoVence && new Date(c.aptoMedicoVence) < hoy
+        );
+        return {
+          title: "Aptos Médicos Vencidos",
+          description: `${vencidos.length} cliente${vencidos.length !== 1 ? "s" : ""} con el certificado vencido`,
+          rows: vencidos.map((c) => ({
+            id: c.id,
+            title: `${c.nombre} ${c.apellido || ""}`.trim(),
+            subtitle: `Venció el ${new Date(c.aptoMedicoVence!).toLocaleDateString("es-AR", { day: "2-digit", month: "long", year: "numeric" })}`,
+            right: "Vencido",
+            rightVariant: "danger" as const,
+          })),
+          loading: false,
+          emptyText: "Todos los aptos médicos están al día",
+          navigateTo: "/clientes",
+          navigateLabel: "Ir a Clientes",
+        };
+      }
       default:
         return {
           title: "",
@@ -337,8 +375,11 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* --- Accesos rápidos a las tareas del día a día --- */}
+      <QuickActionsBar />
+
       {/* --- Fila de Métricas Principales --- */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-3 px-1">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 px-1">
         <StatTile
           icon={Users}
           color="indigo"
@@ -387,6 +428,22 @@ export default function Dashboard() {
           onClick={() => abrirStat("asistenciasHoy")}
           loading={loading}
         />
+        <StatTile
+          icon={PiggyBank}
+          color={stats && stats.balanceMes < 0 ? "rose" : "emerald"}
+          value={stats ? stats.balanceMesFormatted : "$0"}
+          label="Balance del Mes"
+          onClick={() => navigate("/contabilidad")}
+          loading={loading}
+        />
+        <StatTile
+          icon={HeartPulse}
+          color="orange"
+          value={stats ? stats.aptosMedicosVencidos : 0}
+          label="Aptos Vencidos"
+          onClick={() => abrirStat("aptoVencido")}
+          loading={loading}
+        />
       </div>
 
       {/* --- Fila principal de contenido (una sola fila sin scroll en desktop; apilada en mobile/tablet) --- */}
@@ -418,12 +475,18 @@ export default function Dashboard() {
           />
         </div>
 
-        <div className="lg:col-span-4 flex flex-col gap-4">
+        <div className="lg:col-span-4 flex flex-col gap-3">
           <UpcomingSubscriptionsBentoCard
             className="lg:flex-1"
             delay={250}
             loading={loading}
             vencimientos={stats?.proximosVencimientos}
+          />
+          <LatestPaymentsBentoCard
+            pagos={stats?.ultimosPagos ?? []}
+            className="lg:flex-1"
+            delay={275}
+            loading={loading}
           />
           <LatestClientsBentoCard
             clientes={clientesOrdenados}

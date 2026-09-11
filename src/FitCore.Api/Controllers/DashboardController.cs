@@ -108,7 +108,42 @@ public class DashboardController : ControllerBase
             porcentajeCrecimiento = 100;
         }
 
-        // 6. Próximos vencimientos de membresía (en los próximos 7 días)
+        // 6. Balance contable del mes (cuotas + otros ingresos - egresos/inversiones/compras)
+        var inicioMes = new DateOnly(hoy.Year, hoy.Month, 1);
+        var finMes = inicioMes.AddMonths(1).AddDays(-1);
+        var movimientosMes = await _context.MovimientosFinancieros
+            .Where(m => m.Fecha >= inicioMes && m.Fecha <= finMes)
+            .Select(m => new { m.Tipo, m.Monto })
+            .ToListAsync();
+
+        var ingresosVariosMes = movimientosMes.Where(m => m.Tipo == TipoMovimiento.Ingreso).Sum(m => m.Monto);
+        var egresosMes = movimientosMes.Where(m => m.Tipo != TipoMovimiento.Ingreso).Sum(m => m.Monto);
+        var balanceMes = ingresosMes + ingresosVariosMes - egresosMes;
+
+        // 7. Clientes activos con apto médico vencido (alerta legal/seguridad)
+        var aptosMedicosVencidos = await _userManager.Users
+            .CountAsync(u => u.Activo && u.Categoria == Categoria.Cliente &&
+                              u.AptoMedicoVence != null && u.AptoMedicoVence < hoyDate);
+
+        // 8. Últimos pagos registrados (feed corto para la vista general — no
+        // se trae el historial completo, sólo lo último para no duplicar el
+        // trabajo de la pantalla de Pagos).
+        var ultimosPagos = await _context.Pagos
+            .AsNoTracking()
+            .Include(p => p.User)
+            .OrderByDescending(p => p.Fecha)
+            .Take(5)
+            .Select(p => new
+            {
+                id = p.Id,
+                clienteNombre = $"{p.User.Nombre} {p.User.Apellido}",
+                monto = p.Monto,
+                metodo = p.Metodo,
+                fecha = p.Fecha
+            })
+            .ToListAsync();
+
+        // 9. Próximos vencimientos de membresía (en los próximos 7 días)
         var limiteVencimiento = hoy.AddDays(7);
         var proximosVencimientos = await _context.Membresias
             .AsNoTracking()
@@ -138,6 +173,12 @@ public class DashboardController : ControllerBase
             totalSemana,
             totalSemanaFormatted = "$" + totalSemana.ToString("N0", new CultureInfo("es-AR")),
             porcentajeCrecimiento,
+            balanceMes,
+            balanceMesFormatted = "$" + balanceMes.ToString("N0", new CultureInfo("es-AR")),
+            egresosMes,
+            egresosMesFormatted = "$" + egresosMes.ToString("N0", new CultureInfo("es-AR")),
+            aptosMedicosVencidos,
+            ultimosPagos,
             proximosVencimientos
         });
     }
