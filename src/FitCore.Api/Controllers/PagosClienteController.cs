@@ -35,6 +35,17 @@ public class PagosClienteController : ControllerBase
         _logger = logger;
     }
 
+    // GET api/pagos-cliente/planes
+    [HttpGet("planes")]
+    public async Task<IActionResult> GetPlanes()
+    {
+        var planes = await _context.Planes
+            .Where(p => p.Activo)
+            .OrderBy(p => p.Precio)
+            .ToListAsync();
+        return Ok(planes);
+    }
+
     // POST api/pagos-cliente/iniciar-mercadopago
     [HttpPost("iniciar-mercadopago")]
     public async Task<IActionResult> IniciarMercadoPago([FromBody] IniciarMercadoPagoDto dto)

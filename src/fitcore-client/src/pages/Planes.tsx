@@ -101,9 +101,10 @@ export default function Planes() {
 
   const fetchPlanes = useCallback(() => {
     setLoadingPlanes(true);
-    apiFetch("/api/planes")
-      .then((r) => r.json())
-      .then((data: Plan[]) => setPlanes(data.filter((p) => p.activo)))
+    apiFetch("/api/pagos-cliente/planes")
+      .then((r) => (r.ok ? r.json() : apiFetch("/api/planes").then((x) => x.json())))
+      .then((data: Plan[]) => setPlanes(Array.isArray(data) ? data.filter((p) => p.activo) : []))
+      .catch(() => setPlanes([]))
       .finally(() => setLoadingPlanes(false));
   }, []);
 

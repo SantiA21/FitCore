@@ -1,11 +1,11 @@
-﻿using FitCore.Application.DTOs;
+using FitCore.Application.DTOs;
 using FitCore.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FitCore.Api.Controllers;
 
-[Authorize]
+[Authorize(Roles = "Admin,Entrenador")]
 [ApiController]
 [Route("api/[controller]")]
 public class PagosController : ControllerBase

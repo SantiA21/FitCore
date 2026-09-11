@@ -43,6 +43,7 @@ public class AsistenciasController : ControllerBase
     }
 
     // GET api/asistencias?fecha=2025-04-21
+    [Authorize(Roles = "Admin,Entrenador")]
     [HttpGet]
     public async Task<IActionResult> GetByFecha([FromQuery] DateOnly fecha)
     {
@@ -65,6 +66,7 @@ public class AsistenciasController : ControllerBase
     }
 
     // GET api/asistencias/resumen?mes=4&anio=2025
+    [Authorize(Roles = "Admin,Entrenador")]
     [HttpGet("resumen")]
     public async Task<IActionResult> GetResumenMes([FromQuery] int mes, [FromQuery] int anio)
     {
@@ -93,6 +95,7 @@ public class AsistenciasController : ControllerBase
     }
 
     // POST api/asistencias
+    [Authorize(Roles = "Admin,Entrenador")]
     [HttpPost]
     public async Task<IActionResult> Create(AsistenciaDto dto)
     {
@@ -109,6 +112,7 @@ public class AsistenciasController : ControllerBase
     }
 
     // DELETE api/asistencias/5
+    [Authorize(Roles = "Admin,Entrenador")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {

@@ -9,7 +9,7 @@ using System.Globalization;
 
 namespace FitCore.Api.Controllers;
 
-[Authorize]
+[Authorize(Roles = "Admin,Entrenador")]
 [ApiController]
 [Route("api/[controller]")]
 public class DashboardController : ControllerBase
