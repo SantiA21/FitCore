@@ -52,7 +52,7 @@ Esto iniciará:
 ### Paso 3: Aplicar las migraciones de Base de Datos
 Aplica las migraciones de Entity Framework Core sobre PostgreSQL:
 ```powershell
-dotnet ef database update --project src/FitCore.Infrastructure --startup-project src/fitcore.api
+dotnet ef database update --project src/FitCore.Infrastructure --startup-project src/FitCore.Api
 ```
 *(El backend incluye un `DataSeeder` automático que creará los usuarios y planes iniciales si la base de datos está vacía).*
 
@@ -104,17 +104,17 @@ Si prefieres programar en C# con recarga en caliente:
 docker stop fitcore_api
 
 # 2. Corre el backend localmente
-cd src/fitcore.api
+cd src/FitCore.Api
 dotnet watch run
 ```
 
 ### Crear y aplicar nuevas migraciones de EF Core
 ```powershell
 # Crear migración
-dotnet ef migrations add NombreDeLaMigracion --project src/FitCore.Infrastructure --startup-project src/fitcore.api
+dotnet ef migrations add NombreDeLaMigracion --project src/FitCore.Infrastructure --startup-project src/FitCore.Api
 
 # Aplicar a la BD
-dotnet ef database update --project src/FitCore.Infrastructure --startup-project src/fitcore.api
+dotnet ef database update --project src/FitCore.Infrastructure --startup-project src/FitCore.Api
 ```
 
 ### Resetear la Base de Datos desde cero
@@ -126,7 +126,7 @@ docker compose down -v
 docker compose up -d db
 
 # Aplicar migraciones
-dotnet ef database update --project src/FitCore.Infrastructure --startup-project src/fitcore.api
+dotnet ef database update --project src/FitCore.Infrastructure --startup-project src/FitCore.Api
 ```
 
 ### Build de Producción del Frontend
