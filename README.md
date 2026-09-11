@@ -144,12 +144,12 @@ docker build -f Dockerfile.prod -t fitcore-client:latest .
 
 ## 🌐 Despliegue en producción
 
-**Base de datos (Postgres gestionado):** el proyecto usa el Supabase Postgres ya provisionado (`Fitcore`, región `us-east-2`). Como el plan free de Supabase solo expone la conexión directa por IPv6, hosts con salida IPv4 (Render, Railway, etc.) deben usar el **Session Pooler**, no la conexión directa:
+**Base de datos (Postgres gestionado):** el proyecto usa el Supabase Postgres ya provisionado (`Fitcore`, proyecto `uglowihvljfqbpshziwg`, región `us-east-1`). Como el plan free de Supabase solo expone la conexión directa por IPv6, hosts con salida IPv4 (Render, Railway, etc.) deben usar el **Session Pooler**, no la conexión directa:
 
 1. En el dashboard de Supabase del proyecto `Fitcore`, click en **Connect** → pestaña **Session pooler**.
 2. Copiá el connection string (`postgres://postgres.[ref]:[password]@aws-[region].pooler.supabase.com:5432/postgres`) y convertilo al formato de .NET:
    ```
-   Host=aws-[region].pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.[ref];Password=[password]
+   Host=aws-[region].pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.[ref];Password=[password];SSL Mode=Require;Trust Server Certificate=true
    ```
 
 **API (`fitcore-api`) en Render — plan free, sin tarjeta:**
@@ -160,7 +160,7 @@ docker build -f Dockerfile.prod -t fitcore-client:latest .
    - `ConnectionStrings__Default`: el connection string del Session Pooler de arriba.
    - `JwtSettings__SecretKey`: una cadena aleatoria de 32+ caracteres (`openssl rand -hex 32`).
    - `MercadoPago__AccessToken` / `MercadoPago__PublicKey`: dejá los valores `TEST-...` de `.env.example` mientras sea demo.
-4. Deploy. La URL queda como `https://fitcore-api.onrender.com` (el plan free se duerme tras 15 min de inactividad y tarda ~30s en despertar en el próximo request).
+4. Deploy. La URL queda con un sufijo random asignado por Render (ej. `https://fitcore-api-3ty0.onrender.com` — se ve en el dashboard del servicio, no asumas `https://fitcore-api.onrender.com`). El plan free se duerme tras 15 min de inactividad y tarda ~30-50s en despertar en el próximo request.
 
 **Frontend (`fitcore-client`) en Vercel:**
 
