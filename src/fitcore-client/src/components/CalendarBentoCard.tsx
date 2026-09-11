@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, Users } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,6 +11,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+
+const MAX_TOOLTIP_PREVIEW = 5;
 
 const DIAS_SEMANA = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 const MESES = [
@@ -49,13 +58,41 @@ type ResumenDia = {
   asistentes: string[];
 };
 
+type AsistenciaDetalle = {
+  id: number;
+  clienteNombre: string;
+  horaIngreso: string;
+};
+
+function formatHora(hora: string): string {
+  return hora.slice(0, 5);
+}
+
 export default function CalendarBentoCard({ className, delay, onSelectDate, selectedDate }: CalendarBentoCardProps) {
   const hoy = new Date();
   const [anio, setAnio] = useState(hoy.getFullYear());
   const [mes, setMes] = useState(hoy.getMonth());
   const [resumen, setResumen] = useState<ResumenDia[]>([]);
   const [loading, setLoading] = useState(true);
+  const [diaModal, setDiaModal] = useState<Date | null>(null);
+  const [asistenciasDia, setAsistenciasDia] = useState<AsistenciaDetalle[]>([]);
+  const [loadingDia, setLoadingDia] = useState(false);
   const { toast } = useToast();
+
+  const abrirModalDia = useCallback(async (dia: Date) => {
+    setDiaModal(dia);
+    setLoadingDia(true);
+    setAsistenciasDia([]);
+    try {
+      const res = await apiFetch(`/api/asistencias?fecha=${toDateOnly(dia)}`);
+      const data = await res.json();
+      setAsistenciasDia(data);
+    } catch {
+      toast({ variant: "destructive", title: "Error al cargar asistencias del día" });
+    } finally {
+      setLoadingDia(false);
+    }
+  }, [toast]);
 
   const cargarResumen = useCallback(async () => {
     setLoading(true);
@@ -175,7 +212,7 @@ export default function CalendarBentoCard({ className, delay, onSelectDate, sele
                         </div>
                       </div>
                       <div className="grid grid-cols-1 gap-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
-                        {asistentes && asistentes.length > 0 ? asistentes.map((nombre, idx) => (
+                        {asistentes && asistentes.length > 0 ? asistentes.slice(0, MAX_TOOLTIP_PREVIEW).map((nombre, idx) => (
                           <div key={idx} className="flex items-center gap-2 group/item">
                             <div className="h-5 w-5 rounded-lg bg-gray-100 flex items-center justify-center text-[8px] font-bold text-gray-500 group-hover/item:bg-primary/20 group-hover/item:text-primary transition-colors">
                               {nombre.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
@@ -188,6 +225,18 @@ export default function CalendarBentoCard({ className, delay, onSelectDate, sele
                           </div>
                         )}
                       </div>
+                      {total > 0 && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            abrirModalDia(dia);
+                          }}
+                          className="w-full py-1.5 rounded-lg bg-gray-50 hover:bg-primary/10 text-[9px] font-black uppercase tracking-widest text-gray-500 hover:text-primary transition-all cursor-pointer"
+                        >
+                          Ver {total > MAX_TOOLTIP_PREVIEW ? `todas (${total})` : "detalle"}
+                        </button>
+                      )}
                     </div>
                   </TooltipContent>
                 </Tooltip>
@@ -196,6 +245,50 @@ export default function CalendarBentoCard({ className, delay, onSelectDate, sele
           </div>
         </TooltipProvider>
       )}
+
+      <Dialog open={diaModal !== null} onOpenChange={(open) => !open && setDiaModal(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Asistencias del día</DialogTitle>
+            <DialogDescription>
+              {diaModal?.toLocaleDateString("es-AR", {
+                weekday: "long", day: "numeric", month: "long", year: "numeric",
+              })}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-4 divide-y divide-gray-100 max-h-[60vh] overflow-y-auto">
+            {loadingDia ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex items-center justify-between py-3">
+                  <Skeleton className="h-4 w-36" />
+                  <Skeleton className="h-3 w-14" />
+                </div>
+              ))
+            ) : asistenciasDia.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-center gap-2">
+                <Users className="h-5 w-5 text-gray-300" />
+                <p className="text-sm text-gray-400">No hay asistencias registradas para este día</p>
+              </div>
+            ) : (
+              asistenciasDia.map((a) => (
+                <div key={a.id} className="flex items-center justify-between py-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-7 w-7 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-500">
+                      {a.clienteNombre.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
+                    </div>
+                    <span className="text-sm font-medium text-black">{a.clienteNombre}</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-gray-400">
+                    <Clock className="h-3 w-3" />
+                    <span className="text-xs">{formatHora(a.horaIngreso)}</span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </BentoCard>
   );
 }

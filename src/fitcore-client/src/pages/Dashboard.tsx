@@ -89,10 +89,10 @@ export default function Dashboard() {
   };
 
   // Clientes ordenados por fecha de alta descendente
-  const ultimosClientes = useMemo(() => {
-    return [...clientes]
-      .sort((a, b) => new Date(b.fechaAlta).getTime() - new Date(a.fechaAlta).getTime())
-      .slice(0, 4);
+  const clientesOrdenados = useMemo(() => {
+    return [...clientes].sort(
+      (a, b) => new Date(b.fechaAlta).getTime() - new Date(a.fechaAlta).getTime()
+    );
   }, [clientes]);
 
   // Altas de este mes calendario
@@ -208,7 +208,7 @@ export default function Dashboard() {
             vencimientos={stats?.proximosVencimientos}
           />
           <LatestClientsBentoCard
-            clientes={ultimosClientes}
+            clientes={clientesOrdenados}
             className="lg:flex-1"
             delay={300}
             loading={loading}

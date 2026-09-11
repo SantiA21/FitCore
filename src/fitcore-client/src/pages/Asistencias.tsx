@@ -52,7 +52,11 @@ const MESES = [
 ];
 
 function toDateOnly(date: Date): string {
-  return date.toISOString().slice(0, 10);
+  // Usar fecha local para evitar desfasajes de zona horaria al convertir a YYYY-MM-DD
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function formatHora(hora: string): string {

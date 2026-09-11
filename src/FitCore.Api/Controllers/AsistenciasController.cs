@@ -68,11 +68,22 @@ public class AsistenciasController : ControllerBase
     [HttpGet("resumen")]
     public async Task<IActionResult> GetResumenMes([FromQuery] int mes, [FromQuery] int anio)
     {
-        var diasConAsistencias = await _context.Asistencias
+        var asistenciasDelMes = await _context.Asistencias
+            .AsNoTracking()
+            .Include(a => a.User)
             .Where(a => a.Fecha.Month == mes && a.Fecha.Year == anio)
-            .GroupBy(a => a.Fecha)
-            .Select(g => new { fecha = g.Key, total = g.Count() })
+            .OrderByDescending(a => a.HoraIngreso)
             .ToListAsync();
+
+        var diasConAsistencias = asistenciasDelMes
+            .GroupBy(a => a.Fecha)
+            .Select(g => new
+            {
+                fecha = g.Key,
+                total = g.Count(),
+                asistentes = g.Select(a => a.User.Nombre).ToList(),
+            })
+            .ToList();
 
         return Ok(diasConAsistencias);
     }
