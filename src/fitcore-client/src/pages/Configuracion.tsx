@@ -177,19 +177,19 @@ export default function Configuracion() {
       </div>
 
       {/* Navegación por secciones */}
-      <div className="flex gap-2 border-b border-gray-200">
+      <div className="flex gap-2 border-b border-gray-200 overflow-x-auto">
         {SECCIONES.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             onClick={() => setSeccion(id)}
             className={cn(
-              "flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-colors",
+              "flex shrink-0 items-center gap-2 whitespace-nowrap px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-semibold border-b-2 -mb-px transition-colors",
               seccion === id
                 ? "border-black text-black"
                 : "border-transparent text-gray-400 hover:text-gray-700"
             )}
           >
-            <Icon className="h-4 w-4" />
+            <Icon className="h-4 w-4 shrink-0" />
             {label}
           </button>
         ))}
