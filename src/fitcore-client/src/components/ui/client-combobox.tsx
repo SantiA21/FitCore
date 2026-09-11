@@ -37,8 +37,24 @@ export default function ClienteCombobox({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [highlight, setHighlight] = useState(0);
+  const [dropUp, setDropUp] = useState(false);
+  const [maxListHeight, setMaxListHeight] = useState(256);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Evita que el dropdown se abra fuera de la pantalla (y arrastre scroll a
+  // toda la página): si no entra por debajo, se abre hacia arriba, y en
+  // ambos casos se recorta a lo que realmente entra en la ventana.
+  useEffect(() => {
+    if (!open || !containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const margin = 8;
+    const spaceBelow = window.innerHeight - rect.bottom - margin;
+    const spaceAbove = rect.top - margin;
+    const preferUp = spaceBelow < 180 && spaceAbove > spaceBelow;
+    setDropUp(preferUp);
+    setMaxListHeight(Math.max(120, Math.min(256, preferUp ? spaceAbove : spaceBelow)));
+  }, [open]);
 
   const seleccionado = useMemo(
     () => clientes.find((c) => String(c.id) === String(value)) ?? null,
@@ -135,7 +151,13 @@ export default function ClienteCombobox({
       </div>
 
       {open && !disabled && (
-        <div className="absolute z-50 mt-1 w-full max-h-64 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg py-1">
+        <div
+          className={cn(
+            "absolute z-50 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg py-1",
+            dropUp ? "bottom-full mb-1" : "top-full mt-1"
+          )}
+          style={{ maxHeight: maxListHeight }}
+        >
           {filtrados.length === 0 ? (
             <p className="px-3 py-3 text-xs text-gray-400 text-center">{emptyLabel}</p>
           ) : (

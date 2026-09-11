@@ -97,7 +97,7 @@ export default function UpcomingSubscriptionsBentoCard({
         </div>
       </div>
 
-      <div className="space-y-1 lg:flex-1 overflow-y-auto min-h-[80px] pr-1">
+      <div className="space-y-1 lg:flex-1 overflow-y-auto min-h-[56px] pr-1">
         {loading ? (
           Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="flex items-center justify-between p-1.5">
@@ -133,7 +133,7 @@ export default function UpcomingSubscriptionsBentoCard({
       <button
         type="button"
         onClick={() => navigate("/clientes")}
-        className="mt-2 w-full py-1.5 rounded-lg bg-gray-50 text-[9px] font-black uppercase tracking-widest text-gray-500 hover:bg-gray-100 hover:text-black transition-all cursor-pointer"
+        className="mt-1.5 shrink-0 w-full py-1 rounded-lg bg-gray-50 text-[9px] font-black uppercase tracking-widest text-gray-500 hover:bg-gray-100 hover:text-black transition-all cursor-pointer"
       >
         Ver Clientes y Membresías
       </button>

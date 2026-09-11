@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Users, AlertCircle, DollarSign, Calendar, UserPlus, Clock3, PiggyBank, HeartPulse } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import StatTile from "@/components/StatTile";
 import CalendarBentoCard from "@/components/CalendarBentoCard";
 import LatestClientsBentoCard from "@/components/LatestClientsBentoCard";
@@ -363,7 +364,7 @@ export default function Dashboard() {
   }, [statKey, clientes, estadoCuenta, loadingEstadoCuenta, pagos, loadingPagos, asistenciasHoy, loadingAsistenciasHoy, stats]);
 
   return (
-    <div className="space-y-3 pb-6 max-w-[1800px] mx-auto flex flex-col lg:h-full">
+    <div className="space-y-2.5 pb-3 max-w-[1800px] mx-auto flex flex-col lg:h-full">
       <div className="flex flex-wrap justify-between items-center gap-2 px-1">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-black tracking-tight">Panel Central</h1>
@@ -379,71 +380,36 @@ export default function Dashboard() {
       <QuickActionsBar />
 
       {/* --- Fila de Métricas Principales --- */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 px-1">
-        <StatTile
-          icon={Users}
-          color="indigo"
-          value={stats ? stats.clientesActivos : 0}
-          label="Clientes Activos"
-          onClick={() => abrirStat("activos")}
-          loading={loading}
-        />
-        <StatTile
-          icon={UserPlus}
-          color="blue"
-          value={nuevosEsteMes}
-          label="Nuevos este Mes"
-          onClick={() => abrirStat("nuevos")}
-          loading={loading}
-        />
-        <StatTile
-          icon={AlertCircle}
-          color="rose"
-          value={stats ? stats.cuotasVencidas : 0}
-          label="Clientes con Deuda"
-          onClick={() => abrirStat("deuda")}
-          loading={loading}
-        />
-        <StatTile
-          icon={Clock3}
-          color="purple"
-          value={porVencer}
-          label="Por Vencer (7 días)"
-          onClick={() => abrirStat("porVencer")}
-          loading={loading}
-        />
-        <StatTile
-          icon={DollarSign}
-          color="emerald"
-          value={stats ? stats.ingresosMesFormatted : "$0"}
-          label="Ingresos del Mes"
-          onClick={() => abrirStat("ingresos")}
-          loading={loading}
-        />
-        <StatTile
-          icon={Calendar}
-          color="amber"
-          value={stats ? stats.asistenciasHoy : 0}
-          label="Asistencias Hoy"
-          onClick={() => abrirStat("asistenciasHoy")}
-          loading={loading}
-        />
-        <StatTile
-          icon={PiggyBank}
-          color={stats && stats.balanceMes < 0 ? "rose" : "emerald"}
-          value={stats ? stats.balanceMesFormatted : "$0"}
-          label="Balance del Mes"
-          onClick={() => navigate("/contabilidad")}
-          loading={loading}
-        />
-        <StatTile
-          icon={HeartPulse}
-          color="orange"
-          value={stats ? stats.aptosMedicosVencidos : 0}
-          label="Aptos Vencidos"
-          onClick={() => abrirStat("aptoVencido")}
-          loading={loading}
-        />
+      {/* Un solo panel con divisores en vez de 8 tarjetas separadas: a lo
+          ancho, 8 cajas individuales dejaban mucho espacio en blanco a la
+          derecha de cada valor. */}
+      <div className="bg-white border border-gray-200/80 rounded-2xl shadow-xs overflow-hidden">
+        <div className="grid grid-cols-2">
+          {[
+            { key: "activos", icon: Users, color: "indigo" as const, value: stats ? stats.clientesActivos : 0, label: "Clientes Activos", onClick: () => abrirStat("activos") },
+            { key: "nuevos", icon: UserPlus, color: "blue" as const, value: nuevosEsteMes, label: "Nuevos este Mes", onClick: () => abrirStat("nuevos") },
+            { key: "deuda", icon: AlertCircle, color: "rose" as const, value: stats ? stats.cuotasVencidas : 0, label: "Clientes con Deuda", onClick: () => abrirStat("deuda") },
+            { key: "porVencer", icon: Clock3, color: "purple" as const, value: porVencer, label: "Por Vencer (7 días)", onClick: () => abrirStat("porVencer") },
+            { key: "ingresos", icon: DollarSign, color: "emerald" as const, value: stats ? stats.ingresosMesFormatted : "$0", label: "Ingresos del Mes", onClick: () => abrirStat("ingresos") },
+            { key: "asistenciasHoy", icon: Calendar, color: "amber" as const, value: stats ? stats.asistenciasHoy : 0, label: "Asistencias Hoy", onClick: () => abrirStat("asistenciasHoy") },
+            { key: "balance", icon: PiggyBank, color: (stats && stats.balanceMes < 0 ? "rose" : "emerald") as "rose" | "emerald", value: stats ? stats.balanceMesFormatted : "$0", label: "Balance del Mes", onClick: () => navigate("/contabilidad") },
+            { key: "aptoVencido", icon: HeartPulse, color: "orange" as const, value: stats ? stats.aptosMedicosVencidos : 0, label: "Aptos Médicos Vencidos", onClick: () => abrirStat("aptoVencido") },
+          ].map((s, i, arr) => (
+            <StatTile
+              key={s.key}
+              icon={s.icon}
+              color={s.color}
+              value={s.value}
+              label={s.label}
+              onClick={s.onClick}
+              loading={loading}
+              className={cn(
+                i % 2 === 0 && "border-r border-gray-100",
+                i < arr.length - 2 && "border-b border-gray-100"
+              )}
+            />
+          ))}
+        </div>
       </div>
 
       {/* --- Fila principal de contenido (una sola fila sin scroll en desktop; apilada en mobile/tablet) --- */}
@@ -475,22 +441,22 @@ export default function Dashboard() {
           />
         </div>
 
-        <div className="lg:col-span-4 flex flex-col gap-3 lg:min-h-0">
+        <div className="lg:col-span-4 flex flex-col gap-2 lg:min-h-0">
           <UpcomingSubscriptionsBentoCard
-            className="lg:flex-1"
+            className="lg:flex-1 lg:min-h-[122px]"
             delay={250}
             loading={loading}
             vencimientos={stats?.proximosVencimientos}
           />
           <LatestPaymentsBentoCard
             pagos={stats?.ultimosPagos ?? []}
-            className="lg:flex-1"
+            className="lg:flex-1 lg:min-h-[92px]"
             delay={275}
             loading={loading}
           />
           <LatestClientsBentoCard
             clientes={clientesOrdenados}
-            className="lg:flex-1"
+            className="lg:flex-1 lg:min-h-[92px]"
             delay={300}
             loading={loading}
           />

@@ -84,7 +84,7 @@ export default function LatestClientsBentoCard({ clientes, className, delay, loa
         <Maximize2 className="h-3 w-3 text-gray-400 group-hover:text-black transition-colors" />
       </div>
 
-      <div className="space-y-1 lg:flex-1 overflow-y-auto min-h-[80px] pr-1">
+      <div className="space-y-1 lg:flex-1 overflow-y-auto min-h-[56px] pr-1">
         {loading ? (
           Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="flex items-center justify-between p-1.5">

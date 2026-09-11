@@ -56,7 +56,7 @@ export default function LatestPaymentsBentoCard({ pagos, className, delay, loadi
         </div>
       </div>
 
-      <div className="space-y-1 lg:flex-1 overflow-y-auto min-h-[80px] pr-1">
+      <div className="space-y-1 lg:flex-1 overflow-y-auto min-h-[56px] pr-1">
         {loading ? (
           Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="flex items-center justify-between p-1.5">

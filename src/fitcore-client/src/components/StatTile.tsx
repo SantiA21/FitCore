@@ -11,6 +11,7 @@ interface StatTileProps {
   color: StatTileColor;
   onClick?: () => void;
   loading?: boolean;
+  className?: string;
 }
 
 const COLOR_MAP: Record<StatTileColor, string> = {
@@ -23,15 +24,19 @@ const COLOR_MAP: Record<StatTileColor, string> = {
   orange: "bg-orange-50 text-orange-600",
 };
 
-export default function StatTile({ icon: Icon, value, label, color, onClick, loading }: StatTileProps) {
+/**
+ * Fila compacta de una métrica — pensada para vivir dentro de un panel
+ * único (ver Dashboard.tsx) en vez de ser cada una su propia tarjeta con
+ * borde/sombra propios, que dejaba mucho espacio en blanco a la derecha
+ * del valor cuando la columna era ancha.
+ */
+export default function StatTile({ icon: Icon, value, label, color, onClick, loading, className }: StatTileProps) {
   if (loading) {
     return (
-      <div className="bg-white border border-gray-200/80 rounded-xl p-2.5 shadow-xs flex items-center gap-2.5">
-        <Skeleton className="w-8 h-8 rounded-lg shrink-0" />
-        <div className="min-w-0 flex-1 space-y-1">
-          <Skeleton className="h-2.5 w-16 rounded" />
-          <Skeleton className="h-4 w-10 rounded" />
-        </div>
+      <div className={cn("flex items-center gap-2.5 px-3 py-2", className)}>
+        <Skeleton className="w-7 h-7 rounded-lg shrink-0" />
+        <Skeleton className="h-2.5 flex-1 rounded" />
+        <Skeleton className="h-4 w-10 rounded shrink-0" />
       </div>
     );
   }
@@ -40,17 +45,16 @@ export default function StatTile({ icon: Icon, value, label, color, onClick, loa
     <div
       onClick={onClick}
       className={cn(
-        "bg-white border border-gray-200/80 rounded-xl p-2.5 shadow-xs flex items-center gap-2.5 animate-fade-in-up",
-        onClick && "cursor-pointer hover:border-gray-300 hover:shadow-sm transition-all"
+        "flex items-center gap-2.5 px-3 py-2 animate-fade-in-up",
+        onClick && "cursor-pointer hover:bg-gray-50/80 transition-colors",
+        className
       )}
     >
-      <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", COLOR_MAP[color])}>
-        <Icon className="h-4 w-4" />
+      <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shrink-0", COLOR_MAP[color])}>
+        <Icon className="h-3.5 w-3.5" />
       </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider leading-tight truncate">{label}</p>
-        <p className="text-lg font-black text-gray-900 leading-tight truncate">{value}</p>
-      </div>
+      <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide leading-tight flex-1 min-w-0">{label}</span>
+      <span className="text-base font-black text-gray-900 shrink-0">{value}</span>
     </div>
   );
 }
