@@ -421,7 +421,7 @@ export default function Dashboard() {
           onSelectDate={setFechaSeleccionada}
         />
 
-        <div className="lg:col-span-3 flex flex-col gap-3 lg:min-h-0">
+        <div className="lg:col-span-4 flex flex-col gap-3 lg:min-h-0">
           <PaymentsGraphBentoCard
             className="lg:flex-1"
             delay={150}
@@ -440,7 +440,7 @@ export default function Dashboard() {
           />
         </div>
 
-        <div className="lg:col-span-4 flex flex-col gap-3 lg:min-h-0">
+        <div className="lg:col-span-3 flex flex-col gap-3 lg:min-h-0">
           <UpcomingSubscriptionsBentoCard
             className="lg:min-h-[380px]"
             delay={250}

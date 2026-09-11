@@ -47,7 +47,7 @@ export default function StatTile({ icon: Icon, value, label, color, onClick, loa
       <div
         onClick={onClick}
         className={cn(
-          "flex flex-col items-center justify-center text-center gap-1.5 px-2 py-3 animate-fade-in-up",
+          "flex flex-col items-center justify-center text-center gap-1.5 px-1 py-3 min-w-0 animate-fade-in-up",
           onClick && "cursor-pointer hover:bg-gray-50/80 transition-colors",
           className
         )}
@@ -55,7 +55,7 @@ export default function StatTile({ icon: Icon, value, label, color, onClick, loa
         <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center shrink-0", COLOR_MAP[color])}>
           <Icon className="h-4 w-4" />
         </div>
-        <span className="text-lg font-black text-gray-900 leading-none">{value}</span>
+        <span className="text-xs font-black text-gray-900 leading-tight max-w-full break-words">{value}</span>
         <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wide leading-tight">{label}</span>
       </div>
     );

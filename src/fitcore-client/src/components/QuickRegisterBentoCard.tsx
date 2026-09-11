@@ -89,7 +89,7 @@ export default function QuickRegisterBentoCard({
         </span>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <ClienteCombobox
           clientes={clientesActivos}
           value={formClienteId}
@@ -97,7 +97,7 @@ export default function QuickRegisterBentoCard({
           disabled={saving}
           placeholder="Buscar cliente..."
           emptyLabel="No hay clientes activos"
-          className="flex-1 [&_input]:h-10 [&_input]:text-[12px] [&_input]:rounded-xl [&_input]:border-gray-100 [&_input]:shadow-sm [&_input]:px-4 [&_input]:pl-9"
+          className="flex-1 min-w-[160px] [&_input]:h-10 [&_input]:text-[12px] [&_input]:rounded-xl [&_input]:border-gray-100 [&_input]:shadow-sm [&_input]:px-4 [&_input]:pl-9"
         />
 
         <Button
