@@ -108,15 +108,14 @@ public class DashboardController : ControllerBase
             porcentajeCrecimiento = 100;
         }
 
-        // 6. Próximos vencimientos de membresía (en los próximos 10 días)
-        var limiteVencimiento = hoy.AddDays(10);
+        // 6. Próximos vencimientos de membresía (en los próximos 7 días)
+        var limiteVencimiento = hoy.AddDays(7);
         var proximosVencimientos = await _context.Membresias
             .AsNoTracking()
             .Include(m => m.User)
             .Include(m => m.Plan)
             .Where(m => m.Activa && m.FechaFin >= hoy && m.FechaFin <= limiteVencimiento)
             .OrderBy(m => m.FechaFin)
-            .Take(5)
             .Select(m => new
             {
                 id = m.Id,

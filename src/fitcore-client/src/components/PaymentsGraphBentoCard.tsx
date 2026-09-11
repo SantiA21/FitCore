@@ -1,13 +1,19 @@
-import { TrendingUp, TrendingDown, DollarSign } from "lucide-react";
+import { useState } from "react";
+import { TrendingUp, TrendingDown, DollarSign, Maximize2 } from "lucide-react";
 import BentoCard from "./BentoCard";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import StatDetailDialog, { type DetailRow } from "./StatDetailDialog";
 
 type SerieItem = {
   dia: string;
   fecha: string;
   monto: number;
 };
+
+function formatMonto(n: number): string {
+  return n.toLocaleString("es-AR", { style: "currency", currency: "ARS" });
+}
 
 interface PaymentsGraphBentoCardProps {
   className?: string;
@@ -28,6 +34,8 @@ export default function PaymentsGraphBentoCard({
   porcentajeCrecimiento = 0,
   loading,
 }: PaymentsGraphBentoCardProps) {
+  const [modalOpen, setModalOpen] = useState(false);
+
   if (loading) {
     return (
       <BentoCard className={cn("flex flex-col lg:h-full !p-4", className)} delay={delay}>
@@ -62,9 +70,19 @@ export default function PaymentsGraphBentoCard({
 
   const isPositive = porcentajeCrecimiento >= 0;
 
+  const rows: DetailRow[] = [...serie].reverse().map((s, idx) => ({
+    id: idx,
+    title: new Date(s.fecha + "T00:00:00").toLocaleDateString("es-AR", { weekday: "long", day: "2-digit", month: "2-digit" }),
+    right: formatMonto(s.monto),
+    rightVariant: (s.monto > 0 ? "success" : "muted") as const,
+  }));
+
   return (
     <BentoCard className={cn("flex flex-col lg:h-full !p-4", className)} delay={delay}>
-      <div className="flex items-center justify-between mb-1">
+      <div
+        className="flex items-center justify-between mb-1 cursor-pointer group"
+        onClick={() => setModalOpen(true)}
+      >
         <div className="flex items-center gap-2.5">
           <div className="p-1.5 bg-primary/10 rounded-lg">
             <DollarSign className="h-4 w-4 text-primary" />
@@ -74,12 +92,15 @@ export default function PaymentsGraphBentoCard({
             <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Últimos 7 días</p>
           </div>
         </div>
-        <div className={cn(
-          "flex items-center gap-1 px-2 py-0.5 rounded-full border",
-          isPositive ? "bg-emerald-50 border-emerald-100 text-emerald-600" : "bg-rose-50 border-rose-100 text-rose-600"
-        )}>
-          {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-          <span className="text-[10px] font-black">{isPositive ? `+${porcentajeCrecimiento}%` : `${porcentajeCrecimiento}%`}</span>
+        <div className="flex items-center gap-1.5">
+          <div className={cn(
+            "flex items-center gap-1 px-2 py-0.5 rounded-full border",
+            isPositive ? "bg-emerald-50 border-emerald-100 text-emerald-600" : "bg-rose-50 border-rose-100 text-rose-600"
+          )}>
+            {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+            <span className="text-[10px] font-black">{isPositive ? `+${porcentajeCrecimiento}%` : `${porcentajeCrecimiento}%`}</span>
+          </div>
+          <Maximize2 className="h-3 w-3 text-gray-400 group-hover:text-black transition-colors" />
         </div>
       </div>
 
@@ -128,6 +149,17 @@ export default function PaymentsGraphBentoCard({
           </div>
         )}
       </div>
+
+      <StatDetailDialog
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        title="Ingresos de la Semana"
+        description={`Total cobrado: ${totalSemanaFormatted ?? formatMonto(totalSemana)}`}
+        rows={rows}
+        emptyText="Sin ingresos en los últimos 7 días"
+        navigateTo="/pagos"
+        navigateLabel="Ir a Pagos"
+      />
     </BentoCard>
   );
 }
