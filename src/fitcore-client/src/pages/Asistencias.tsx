@@ -1,5 +1,8 @@
-import { useEffect, useState, useCallback } from "react";
-import { ChevronLeft, ChevronRight, Plus, Trash2, Clock, Users } from "lucide-react";
+import { useEffect, useState, useCallback, useMemo } from "react";
+import {
+  ChevronLeft, ChevronRight, Plus, Trash2, Clock, Users, Search,
+  TrendingUp, TrendingDown, Flame, Trophy, CalendarCheck2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
@@ -14,7 +17,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import ClienteCombobox from "@/components/ui/client-combobox";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import StatTile from "@/components/StatTile";
 import { apiFetch } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -29,12 +40,40 @@ type Asistencia = {
 type ResumenDia = {
   fecha: string;
   total: number;
+  asistentes: string[];
 };
 
 type Cliente = {
   id: string;
   nombre: string;
   activo: boolean;
+};
+
+type DiaPico = {
+  fecha: string;
+  total: number;
+};
+
+type TopAsistente = {
+  userId: string;
+  nombre: string;
+  total: number;
+};
+
+type PorDiaSemana = {
+  diaSemana: number;
+  total: number;
+};
+
+type Estadisticas = {
+  totalMes: number;
+  totalMesAnterior: number;
+  variacionPorcentual: number | null;
+  diasConAsistencia: number;
+  promedioPorDiaActivo: number;
+  diaPico: DiaPico | null;
+  topAsistentes: TopAsistente[];
+  porDiaSemana: PorDiaSemana[];
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -44,6 +83,32 @@ const MESES = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
 ];
+
+const MAX_TOOLTIP_PREVIEW = 5;
+
+const AVATAR_COLORS = [
+  "bg-indigo-50 text-indigo-600",
+  "bg-orange-50 text-orange-600",
+  "bg-emerald-50 text-emerald-600",
+  "bg-rose-50 text-rose-600",
+  "bg-blue-50 text-blue-600",
+  "bg-purple-50 text-purple-600",
+];
+
+function avatarColor(seed: string) {
+  const sum = seed.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  return AVATAR_COLORS[sum % AVATAR_COLORS.length];
+}
+
+function iniciales(nombre: string) {
+  return nombre
+    .trim()
+    .split(/\s+/)
+    .map((p) => p[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
 
 function toDateOnly(date: Date): string {
   // Usar fecha local para evitar desfasajes de zona horaria al convertir a YYYY-MM-DD
@@ -68,6 +133,15 @@ function getDiasDelMes(anio: number, mes: number): (Date | null)[] {
   return celdas;
 }
 
+function getHeatmapClass(total: number, selected: boolean, esHoy: boolean) {
+  if (selected) return "bg-black text-white shadow-lg shadow-gray-300";
+  if (esHoy) return "bg-indigo-50 text-indigo-700 font-bold ring-2 ring-indigo-300 ring-offset-1";
+  if (total === 0) return "text-gray-300 hover:bg-gray-50";
+  if (total <= 5) return "bg-emerald-100 text-emerald-700 font-medium hover:bg-emerald-200";
+  if (total <= 15) return "bg-emerald-300 text-emerald-900 font-bold hover:bg-emerald-400";
+  return "bg-emerald-500 text-white font-black hover:bg-emerald-600";
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function Asistencias() {
@@ -78,11 +152,14 @@ export default function Asistencias() {
 
   // Datos
   const [resumen, setResumen] = useState<ResumenDia[]>([]);
+  const [estadisticas, setEstadisticas] = useState<Estadisticas | null>(null);
   const [asistenciasDia, setAsistenciasDia] = useState<Asistencia[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [busqueda, setBusqueda] = useState("");
 
   // Loading states
   const [loadingResumen, setLoadingResumen] = useState(true);
+  const [loadingEstadisticas, setLoadingEstadisticas] = useState(true);
   const [loadingDia, setLoadingDia] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
@@ -108,9 +185,24 @@ export default function Asistencias() {
     }
   }, [mes, anio]);
 
+  // ── Cargar estadísticas del mes ─────────────────────────────────────────────
+  const cargarEstadisticas = useCallback(async () => {
+    setLoadingEstadisticas(true);
+    try {
+      const res = await apiFetch(`/api/asistencias/estadisticas?mes=${mes + 1}&anio=${anio}`);
+      const data = await res.json();
+      setEstadisticas(data);
+    } catch {
+      toast({ variant: "destructive", title: "Error al cargar las estadísticas" });
+    } finally {
+      setLoadingEstadisticas(false);
+    }
+  }, [mes, anio]);
+
   useEffect(() => {
     cargarResumen();
-  }, [cargarResumen]);
+    cargarEstadisticas();
+  }, [cargarResumen, cargarEstadisticas]);
 
   // ── Cargar clientes activos (una sola vez) ─────────────────────────────────
   useEffect(() => {
@@ -136,6 +228,7 @@ export default function Asistencias() {
 
   const seleccionarDia = (dia: Date) => {
     setDiaSeleccionado(dia);
+    setBusqueda("");
     cargarDia(dia);
   };
 
@@ -150,6 +243,12 @@ export default function Asistencias() {
     if (mes === 11) { setMes(0); setAnio((a) => a + 1); }
     else setMes((m) => m + 1);
     setDiaSeleccionado(null);
+  };
+
+  const irAHoy = () => {
+    setAnio(hoy.getFullYear());
+    setMes(hoy.getMonth());
+    seleccionarDia(hoy);
   };
 
   // ── Registrar asistencia ───────────────────────────────────────────────────
@@ -173,6 +272,7 @@ export default function Asistencias() {
       setFormHora("08:00");
       await cargarDia(diaSeleccionado);
       await cargarResumen();
+      await cargarEstadisticas();
     } catch {
       toast({ variant: "destructive", title: "No se pudo registrar", description: "Intentá nuevamente." });
     } finally {
@@ -189,6 +289,7 @@ export default function Asistencias() {
 
       setAsistenciasDia((prev) => prev.filter((a) => a.id !== id));
       await cargarResumen();
+      await cargarEstadisticas();
       toast({ variant: "success", title: "Asistencia eliminada" });
     } catch {
       toast({ variant: "destructive", title: "No se pudo eliminar" });
@@ -199,20 +300,76 @@ export default function Asistencias() {
 
   // ── Datos calendario ───────────────────────────────────────────────────────
   const celdas = getDiasDelMes(anio, mes);
-  const resumenMap = new Map(resumen.map((r) => [r.fecha.slice(0, 10), r.total]));
+  const resumenMap = new Map(resumen.map((r) => [r.fecha.slice(0, 10), r]));
   const hoyStr = toDateOnly(hoy);
   const diaSeleccionadoStr = diaSeleccionado ? toDateOnly(diaSeleccionado) : null;
+
+  const asistenciasFiltradas = useMemo(() => {
+    if (!busqueda.trim()) return asistenciasDia;
+    const q = busqueda.trim().toLowerCase();
+    return asistenciasDia.filter((a) => a.clienteNombre.toLowerCase().includes(q));
+  }, [asistenciasDia, busqueda]);
+
+  const maxTopAsistente = estadisticas?.topAsistentes[0]?.total ?? 0;
+  const maxPorDiaSemana = Math.max(1, ...(estadisticas?.porDiaSemana.map((d) => d.total) ?? [1]));
+
+  const variacion = estadisticas?.variacionPorcentual ?? null;
+  const variacionEsPositiva = (variacion ?? 0) >= 0;
+
+  const diaPicoLabel = estadisticas?.diaPico
+    ? new Date(`${estadisticas.diaPico.fecha}T00:00:00`).toLocaleDateString("es-AR", { day: "numeric", month: "short" })
+    : "—";
 
   // ─────────────────────────────────────────────────────────────────────────────
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-black">Asistencias</h1>
+      <div>
+        <h1 className="text-2xl font-semibold text-black">Asistencias</h1>
+        <p className="text-sm text-gray-400 mt-0.5">Registro diario de check-ins y estadísticas de concurrencia</p>
+      </div>
 
-      <div className="flex flex-col lg:flex-row gap-6">
+      {/* ── Fila de estadísticas ── */}
+      <div className="bg-white border border-gray-200/80 rounded-2xl shadow-xs overflow-hidden">
+        <div className="grid grid-cols-2 lg:grid-cols-4">
+          <StatTile
+            icon={Users}
+            color="indigo"
+            value={estadisticas ? estadisticas.totalMes : 0}
+            label={`Asistencias en ${MESES[mes]}`}
+            loading={loadingEstadisticas}
+            className="border-r border-b border-gray-100 lg:border-b-0"
+          />
+          <StatTile
+            icon={Flame}
+            color="amber"
+            value={estadisticas ? estadisticas.promedioPorDiaActivo : 0}
+            label="Promedio por día activo"
+            loading={loadingEstadisticas}
+            className="border-b border-gray-100 lg:border-b-0 lg:border-r"
+          />
+          <StatTile
+            icon={CalendarCheck2}
+            color="purple"
+            value={estadisticas ? estadisticas.diaPico?.total ?? 0 : 0}
+            label={estadisticas?.diaPico ? `Día pico · ${diaPicoLabel}` : "Día pico"}
+            loading={loadingEstadisticas}
+            className="border-r border-gray-100"
+          />
+          <StatTile
+            icon={variacionEsPositiva ? TrendingUp : TrendingDown}
+            color={variacionEsPositiva ? "emerald" : "rose"}
+            value={variacion === null ? "—" : `${variacion > 0 ? "+" : ""}${variacion}%`}
+            label="Vs. mes anterior"
+            loading={loadingEstadisticas}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
 
         {/* ── Calendario ── */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6 w-full lg:w-auto lg:min-w-[420px]">
+        <div className="xl:col-span-4 bg-white border border-gray-200/80 rounded-2xl p-6">
 
           {/* Navegación */}
           <div className="flex items-center justify-between mb-6">
@@ -222,9 +379,17 @@ export default function Asistencias() {
             >
               <ChevronLeft className="h-4 w-4 text-gray-600" />
             </button>
-            <span className="text-sm font-semibold text-black">
-              {MESES[mes]} {anio}
-            </span>
+            <div className="flex flex-col items-center">
+              <span className="text-sm font-semibold text-black">
+                {MESES[mes]} {anio}
+              </span>
+              <button
+                onClick={irAHoy}
+                className="text-[11px] font-medium text-gray-400 hover:text-black transition-colors mt-0.5"
+              >
+                Ir a hoy
+              </button>
+            </div>
             <button
               onClick={irMesSiguiente}
               className="p-1.5 rounded-md hover:bg-gray-100 transition-colors"
@@ -245,57 +410,89 @@ export default function Asistencias() {
           {/* Celdas */}
           {loadingResumen ? (
             <div className="grid grid-cols-7 gap-1">
-              {Array.from({ length: 35 }).map((_, i) => (
-                <Skeleton key={i} className="h-10 w-full rounded-md" />
+              {Array.from({ length: celdas.length }).map((_, i) => (
+                <Skeleton key={i} className="h-11 w-full rounded-md" />
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-7 gap-1">
-              {celdas.map((dia, i) => {
-                if (!dia) return <div key={`empty-${i}`} />;
-                const fechaStr = toDateOnly(dia);
-                const total = resumenMap.get(fechaStr) ?? 0;
-                const esHoy = fechaStr === hoyStr;
-                const esSeleccionado = fechaStr === diaSeleccionadoStr;
+            <TooltipProvider delayDuration={150}>
+              <div className="grid grid-cols-7 gap-1">
+                {celdas.map((dia, i) => {
+                  if (!dia) return <div key={`empty-${i}`} />;
+                  const fechaStr = toDateOnly(dia);
+                  const diaData = resumenMap.get(fechaStr);
+                  const total = diaData?.total ?? 0;
+                  const asistentes = diaData?.asistentes ?? [];
+                  const esHoy = fechaStr === hoyStr;
+                  const esSeleccionado = fechaStr === diaSeleccionadoStr;
 
-                return (
-                  <button
-                    key={fechaStr}
-                    onClick={() => seleccionarDia(dia)}
-                    className={[
-                      "relative flex flex-col items-center justify-center h-10 w-full rounded-md text-sm transition-colors",
-                      esSeleccionado
-                        ? "bg-black text-white"
-                        : esHoy
-                        ? "bg-gray-100 text-black font-semibold"
-                        : "hover:bg-gray-50 text-gray-700",
-                    ].join(" ")}
-                  >
-                    <span>{dia.getDate()}</span>
-                    {total > 0 && (
-                      <span
-                        className={[
-                          "absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-semibold leading-none",
-                          esSeleccionado ? "text-gray-300" : "text-gray-400",
-                        ].join(" ")}
-                      >
-                        {total}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+                  return (
+                    <Tooltip key={fechaStr}>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => seleccionarDia(dia)}
+                          className={cn(
+                            "relative flex flex-col items-center justify-center h-11 w-full rounded-md text-sm transition-colors",
+                            getHeatmapClass(total, esSeleccionado, esHoy)
+                          )}
+                        >
+                          <span>{dia.getDate()}</span>
+                          {total > 0 && (
+                            <span
+                              className={cn(
+                                "text-[9px] font-semibold leading-none mt-0.5",
+                                esSeleccionado || total > 15 ? "text-white/80" : "text-current opacity-60"
+                              )}
+                            >
+                              {total}
+                            </span>
+                          )}
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="rounded-xl p-3">
+                        <div className="space-y-2 min-w-[140px]">
+                          <div className="flex items-center justify-between gap-3 border-b border-gray-100 pb-1.5">
+                            <span className="text-xs font-semibold">
+                              {dia.toLocaleDateString("es-AR", { day: "numeric", month: "short" })}
+                            </span>
+                            <span className="text-xs font-bold text-gray-500">{total} asist.</span>
+                          </div>
+                          {asistentes.length > 0 ? (
+                            <ul className="space-y-1">
+                              {asistentes.slice(0, MAX_TOOLTIP_PREVIEW).map((nombre) => (
+                                <li key={nombre} className="text-xs text-gray-600">{nombre}</li>
+                              ))}
+                              {asistentes.length > MAX_TOOLTIP_PREVIEW && (
+                                <li className="text-xs text-gray-400">
+                                  +{asistentes.length - MAX_TOOLTIP_PREVIEW} más
+                                </li>
+                              )}
+                            </ul>
+                          ) : (
+                            <p className="text-xs text-gray-400">Sin asistencias</p>
+                          )}
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+              </div>
+            </TooltipProvider>
           )}
 
           {/* Leyenda */}
-          <p className="text-xs text-gray-400 mt-4 text-center">
-            El número debajo del día indica cuántas asistencias hubo
-          </p>
+          <div className="flex items-center justify-center gap-2 mt-4">
+            <span className="text-[11px] text-gray-400">Menos</span>
+            <span className="h-3 w-3 rounded bg-gray-100" />
+            <span className="h-3 w-3 rounded bg-emerald-100" />
+            <span className="h-3 w-3 rounded bg-emerald-300" />
+            <span className="h-3 w-3 rounded bg-emerald-500" />
+            <span className="text-[11px] text-gray-400">Más</span>
+          </div>
         </div>
 
         {/* ── Panel del día ── */}
-        <div className="flex-1 bg-white border border-gray-200 rounded-lg">
+        <div className="xl:col-span-5 bg-white border border-gray-200/80 rounded-2xl flex flex-col">
           {!diaSeleccionado ? (
             <div className="flex flex-col items-center justify-center h-full py-20 text-center px-6">
               <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
@@ -309,9 +506,9 @@ export default function Asistencias() {
           ) : (
             <>
               {/* Header del panel */}
-              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between p-6 border-b border-gray-200 gap-3">
                 <div>
-                  <h2 className="text-base font-semibold text-black">
+                  <h2 className="text-base font-semibold text-black capitalize">
                     {diaSeleccionado.toLocaleDateString("es-AR", {
                       weekday: "long",
                       day: "numeric",
@@ -330,20 +527,39 @@ export default function Asistencias() {
                   size="sm"
                   onClick={() => setModalOpen(true)}
                   disabled={loadingDia}
+                  className="shrink-0"
                 >
                   <Plus className="h-4 w-4 mr-1.5" />
                   Registrar
                 </Button>
               </div>
 
+              {/* Buscador (solo si hay varias asistencias) */}
+              {!loadingDia && asistenciasDia.length > 6 && (
+                <div className="px-6 pt-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      value={busqueda}
+                      onChange={(e) => setBusqueda(e.target.value)}
+                      placeholder="Buscar por nombre..."
+                      className="pl-9 h-9"
+                    />
+                  </div>
+                </div>
+              )}
+
               {/* Lista de asistencias */}
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-gray-100 max-h-[480px] overflow-y-auto">
                 {loadingDia ? (
                   Array.from({ length: 3 }).map((_, i) => (
                     <div key={i} className="flex items-center justify-between px-6 py-4">
-                      <div className="space-y-1.5">
-                        <Skeleton className="h-4 w-36" />
-                        <Skeleton className="h-3 w-20" />
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="h-9 w-9 rounded-full" />
+                        <div className="space-y-1.5">
+                          <Skeleton className="h-4 w-36" />
+                          <Skeleton className="h-3 w-20" />
+                        </div>
                       </div>
                       <Skeleton className="h-8 w-8 rounded-md" />
                     </div>
@@ -352,24 +568,33 @@ export default function Asistencias() {
                   <div className="text-center py-12 text-sm text-gray-400">
                     No hay asistencias registradas para este día
                   </div>
+                ) : asistenciasFiltradas.length === 0 ? (
+                  <div className="text-center py-12 text-sm text-gray-400">
+                    Ningún resultado para "{busqueda}"
+                  </div>
                 ) : (
-                  asistenciasDia.map((a, i) => (
+                  asistenciasFiltradas.map((a, i) => (
                     <div
                       key={a.id}
-                      className="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors animate-fade-in-up"
+                      className="flex items-center justify-between px-6 py-3.5 hover:bg-gray-50 transition-colors animate-fade-in-up"
                       style={{ animationDelay: `${Math.min(i, 10) * 30}ms` }}
                     >
-                      <div>
-                        <p className="text-sm font-medium text-black">{a.clienteNombre}</p>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <Clock className="h-3 w-3 text-gray-400" />
-                          <span className="text-xs text-gray-400">{formatHora(a.horaIngreso)}</span>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={cn("h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0", avatarColor(a.userId))}>
+                          {iniciales(a.clienteNombre)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-black truncate">{a.clienteNombre}</p>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <Clock className="h-3 w-3 text-gray-400" />
+                            <span className="text-xs text-gray-400">{formatHora(a.horaIngreso)}</span>
+                          </div>
                         </div>
                       </div>
                       <button
                         onClick={() => handleEliminar(a.id)}
                         disabled={deletingId === a.id}
-                        className="p-2 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-40"
+                        className="p-2 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-40 shrink-0"
                         aria-label="Eliminar asistencia"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -380,6 +605,80 @@ export default function Asistencias() {
               </div>
             </>
           )}
+        </div>
+
+        {/* ── Top asistentes y actividad semanal ── */}
+        <div className="xl:col-span-3 bg-white border border-gray-200/80 rounded-2xl p-5 flex flex-col gap-6">
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Trophy className="h-4 w-4 text-amber-500" />
+              <h3 className="text-sm font-semibold text-black">Top asistentes del mes</h3>
+            </div>
+
+            {loadingEstadisticas ? (
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-2.5">
+                    <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+                    <Skeleton className="h-3 flex-1 rounded" />
+                  </div>
+                ))}
+              </div>
+            ) : !estadisticas || estadisticas.topAsistentes.length === 0 ? (
+              <p className="text-xs text-gray-400 py-4 text-center">
+                Sin asistencias registradas este mes
+              </p>
+            ) : (
+              <ul className="space-y-2.5">
+                {estadisticas.topAsistentes.map((persona, idx) => (
+                  <li key={persona.userId} className="flex items-center gap-2.5">
+                    <span className={cn(
+                      "text-[11px] font-black w-4 text-center shrink-0",
+                      idx === 0 ? "text-amber-500" : idx === 1 ? "text-gray-400" : idx === 2 ? "text-orange-400" : "text-gray-300"
+                    )}>
+                      {idx + 1}
+                    </span>
+                    <div className={cn("h-8 w-8 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0", avatarColor(persona.userId))}>
+                      {iniciales(persona.nombre)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-black truncate">{persona.nombre}</p>
+                      <div className="h-1 bg-gray-100 rounded-full mt-1 overflow-hidden">
+                        <div
+                          className="h-full bg-black rounded-full"
+                          style={{ width: `${maxTopAsistente > 0 ? (persona.total / maxTopAsistente) * 100 : 0}%` }}
+                        />
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold text-gray-500 shrink-0">{persona.total}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="border-t border-gray-100 pt-5">
+            <h3 className="text-sm font-semibold text-black mb-3">Actividad por día de la semana</h3>
+            {loadingEstadisticas ? (
+              <Skeleton className="h-24 w-full rounded" />
+            ) : (
+              <div className="flex items-end justify-between gap-1.5 h-24">
+                {(estadisticas?.porDiaSemana ?? []).map((d) => (
+                  <div key={d.diaSemana} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
+                    <div
+                      className={cn(
+                        "w-full rounded-md transition-all",
+                        d.total > 0 ? "bg-black" : "bg-gray-100"
+                      )}
+                      style={{ height: `${Math.max(4, (d.total / maxPorDiaSemana) * 100)}%` }}
+                      title={`${DIAS_SEMANA[d.diaSemana]}: ${d.total} asistencias`}
+                    />
+                    <span className="text-[10px] font-medium text-gray-400">{DIAS_SEMANA[d.diaSemana]}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

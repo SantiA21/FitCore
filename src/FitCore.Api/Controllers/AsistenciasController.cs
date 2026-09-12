@@ -94,6 +94,83 @@ public class AsistenciasController : ControllerBase
         return Ok(diasConAsistencias);
     }
 
+    // GET api/asistencias/estadisticas?mes=4&anio=2025
+    [Authorize(Roles = "Admin,Entrenador")]
+    [HttpGet("estadisticas")]
+    public async Task<IActionResult> GetEstadisticas([FromQuery] int mes, [FromQuery] int anio)
+    {
+        var asistenciasDelMes = await _context.Asistencias
+            .AsNoTracking()
+            .Include(a => a.User)
+            .Where(a => a.Fecha.Month == mes && a.Fecha.Year == anio)
+            .ToListAsync();
+
+        var primerDiaMes = new DateOnly(anio, mes, 1);
+        var mesAnterior = primerDiaMes.AddMonths(-1);
+        var totalMesAnterior = await _context.Asistencias
+            .AsNoTracking()
+            .Where(a => a.Fecha.Month == mesAnterior.Month && a.Fecha.Year == mesAnterior.Year)
+            .CountAsync();
+
+        var totalMes = asistenciasDelMes.Count;
+
+        var porDia = asistenciasDelMes
+            .GroupBy(a => a.Fecha)
+            .Select(g => new { fecha = g.Key, total = g.Count() })
+            .OrderByDescending(g => g.total)
+            .ToList();
+
+        var diaPico = porDia.FirstOrDefault();
+        var diasConAsistencia = porDia.Count;
+        var promedioPorDiaActivo = diasConAsistencia > 0
+            ? Math.Round((double)totalMes / diasConAsistencia, 1)
+            : 0;
+
+        var topAsistentes = asistenciasDelMes
+            .GroupBy(a => a.UserId)
+            .Select(g => new
+            {
+                userId = g.Key,
+                nombre = FormatNombre(g.First().User),
+                total = g.Count(),
+            })
+            .OrderByDescending(x => x.total)
+            .ThenBy(x => x.nombre)
+            .Take(8)
+            .ToList();
+
+        var porDiaSemana = Enumerable.Range(0, 7)
+            .Select(dow => new
+            {
+                diaSemana = dow,
+                total = asistenciasDelMes.Count(a => (int)a.Fecha.DayOfWeek == dow),
+            })
+            .ToList();
+
+        double? variacionPorcentual = totalMesAnterior > 0
+            ? Math.Round((totalMes - totalMesAnterior) / (double)totalMesAnterior * 100, 1)
+            : totalMes > 0 ? 100 : null;
+
+        return Ok(new
+        {
+            totalMes,
+            totalMesAnterior,
+            variacionPorcentual,
+            diasConAsistencia,
+            promedioPorDiaActivo,
+            diaPico = diaPico is null ? null : new { fecha = diaPico.fecha, total = diaPico.total },
+            topAsistentes,
+            porDiaSemana,
+        });
+    }
+
+    private static string FormatNombre(FitCore.Domain.Entities.AppUser user)
+    {
+        return string.IsNullOrWhiteSpace(user.Apellido)
+            ? user.Nombre
+            : $"{user.Nombre} {user.Apellido}".Trim();
+    }
+
     // POST api/asistencias
     [Authorize(Roles = "Admin,Entrenador")]
     [HttpPost]
