@@ -279,6 +279,7 @@ export default function Dashboard() {
           description: `${vencimientos.length} membresía${vencimientos.length !== 1 ? "s" : ""} vencen en los próximos 7 días`,
           rows: vencimientos.map((v) => ({
             id: v.id,
+            avatarSeed: v.clienteId,
             title: v.nombre,
             subtitle: v.plan,
             right: v.diasRestantes === 0 ? "Hoy" : v.diasRestantes === 1 ? "Mañana" : `${v.diasRestantes}d`,
@@ -300,6 +301,7 @@ export default function Dashboard() {
           description: `${delMes.length} pago${delMes.length !== 1 ? "s" : ""} registrado${delMes.length !== 1 ? "s" : ""} en ${hoy.toLocaleDateString("es-AR", { month: "long" })}`,
           rows: delMes.map((p) => ({
             id: p.id,
+            avatarSeed: p.clienteNombre,
             title: p.clienteNombre,
             subtitle: `${new Date(p.fecha).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" })} · ${p.metodo}`,
             right: formatMonto(p.monto),
@@ -318,6 +320,7 @@ export default function Dashboard() {
           description: `${lista.length} check-in${lista.length !== 1 ? "s" : ""} registrado${lista.length !== 1 ? "s" : ""} hoy`,
           rows: lista.map((a) => ({
             id: a.id,
+            avatarSeed: a.clienteNombre,
             title: a.clienteNombre,
             right: a.horaIngreso?.slice(0, 5),
             rightVariant: "muted" as const,

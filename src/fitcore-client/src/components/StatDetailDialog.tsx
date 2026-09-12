@@ -3,6 +3,7 @@ import { Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import PersonaAvatar from "@/components/ui/persona-avatar";
 import {
   Dialog,
   DialogContent,
@@ -19,6 +20,8 @@ export type DetailRow = {
   subtitle?: string;
   right?: string;
   rightVariant?: DetailRowVariant;
+  /** Seed para el avatar cuando `id` no es el id real del cliente (ej. id de un pago o una asistencia) — por defecto usa `id`. */
+  avatarSeed?: string;
 };
 
 interface StatDetailDialogProps {
@@ -82,9 +85,7 @@ export default function StatDetailDialog({
             rows.map((row) => (
               <div key={row.id} className="flex items-center justify-between py-2.5">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="h-7 w-7 rounded-full bg-gray-100 flex items-center justify-center text-[11px] font-bold text-gray-500 shrink-0">
-                    {row.title.charAt(0).toUpperCase()}
-                  </div>
+                  <PersonaAvatar seed={row.avatarSeed ?? String(row.id)} size={28} />
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-black truncate">{row.title}</p>
                     {row.subtitle && (

@@ -28,6 +28,7 @@ import {
 } from "recharts";
 import ChartTooltip from "@/components/charts/ChartTooltip";
 import StatTile from "@/components/StatTile";
+import PersonaAvatar from "@/components/ui/persona-avatar";
 import { apiFetch } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -89,30 +90,6 @@ const MESES = [
 ];
 
 const MAX_TOOLTIP_PREVIEW = 5;
-
-const AVATAR_COLORS = [
-  "bg-indigo-50 text-indigo-600",
-  "bg-orange-50 text-orange-600",
-  "bg-emerald-50 text-emerald-600",
-  "bg-rose-50 text-rose-600",
-  "bg-blue-50 text-blue-600",
-  "bg-purple-50 text-purple-600",
-];
-
-function avatarColor(seed: string) {
-  const sum = seed.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-  return AVATAR_COLORS[sum % AVATAR_COLORS.length];
-}
-
-function iniciales(nombre: string) {
-  return nombre
-    .trim()
-    .split(/\s+/)
-    .map((p) => p[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-}
 
 function toDateOnly(date: Date): string {
   // Usar fecha local para evitar desfasajes de zona horaria al convertir a YYYY-MM-DD
@@ -583,9 +560,7 @@ export default function Asistencias() {
                       style={{ animationDelay: `${Math.min(i, 10) * 30}ms` }}
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className={cn("h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0", avatarColor(a.userId))}>
-                          {iniciales(a.clienteNombre)}
-                        </div>
+                        <PersonaAvatar seed={a.userId} size={36} />
                         <div className="min-w-0">
                           <p className="text-sm font-medium text-black truncate">{a.clienteNombre}</p>
                           <div className="flex items-center gap-1 mt-0.5">
@@ -641,9 +616,7 @@ export default function Asistencias() {
                     )}>
                       {idx + 1}
                     </span>
-                    <div className={cn("h-8 w-8 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0", avatarColor(persona.userId))}>
-                      {iniciales(persona.nombre)}
-                    </div>
+                    <PersonaAvatar seed={persona.userId} size={32} />
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-medium text-black truncate">{persona.nombre}</p>
                       <div className="h-1 bg-gray-100 rounded-full mt-1 overflow-hidden">

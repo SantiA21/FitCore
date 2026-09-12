@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Clock, Receipt, User, CheckCircle2 } from "lucide-react";
 import BentoCard from "./BentoCard";
+import PersonaAvatar from "@/components/ui/persona-avatar";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
@@ -152,9 +153,7 @@ export default function RecentActivityTabsCard({
                   style={{ animationDelay: `${Math.min(i, 12) * 40}ms` }}
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <div className="h-6 w-6 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
-                      <User className="h-3 w-3" />
-                    </div>
+                    <PersonaAvatar seed={exp.clienteId} size={24} />
                     <div className="min-w-0">
                       <p className="font-bold text-black truncate text-[11px]">{exp.nombre}</p>
                       <p className="text-gray-400 truncate text-[9px]">{exp.plan}</p>
@@ -183,9 +182,7 @@ export default function RecentActivityTabsCard({
                 style={{ animationDelay: `${i * 40}ms` }}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="h-6 w-6 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-700 font-bold text-[10px] shrink-0">
-                    {pago.clienteNombre.charAt(0)}
-                  </div>
+                  <PersonaAvatar seed={pago.clienteNombre} size={24} />
                   <div className="min-w-0">
                     <p className="text-[11px] font-medium text-black truncate">{pago.clienteNombre}</p>
                     <div className="flex items-center gap-1 mt-0.5">
@@ -219,9 +216,7 @@ export default function RecentActivityTabsCard({
                   style={{ animationDelay: `${Math.min(i, 12) * 40}ms` }}
                 >
                   <div className="flex items-center gap-2.5">
-                    <div className="h-6 w-6 rounded-full bg-gray-100 flex items-center justify-center text-black font-bold border border-gray-200 text-[10px]">
-                      {cliente.nombre.charAt(0)}
-                    </div>
+                    <PersonaAvatar seed={String(cliente.id)} size={24} />
                     <span className="font-medium text-black text-[11px]">
                       {cliente.nombre} {cliente.apellido || ""}
                     </span>

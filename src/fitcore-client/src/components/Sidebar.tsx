@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { useGymSettings } from "@/context/GymSettingsContext";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import PersonaAvatar from "@/components/ui/persona-avatar";
 import logoIcon from "@/assets/brand/fitcore-icon.png";
 
 interface NavItem {
@@ -194,9 +195,13 @@ export default function Sidebar() {
         {/* Profile + Logout */}
         <div className={cn("p-3 border-t border-[#f0f0f0] space-y-1", collapsed && "px-2")}>
           <div className={cn("flex items-center gap-3 px-3 py-2", collapsed && "justify-center px-0")}>
-            <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center shrink-0">
-              <User className="h-4 w-4 text-gray-600" />
-            </div>
+            {user ? (
+              <PersonaAvatar seed={user.id} size={32} />
+            ) : (
+              <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center shrink-0">
+                <User className="h-4 w-4 text-gray-600" />
+              </div>
+            )}
             {!collapsed && (
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-black truncate">

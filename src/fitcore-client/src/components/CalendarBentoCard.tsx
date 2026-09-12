@@ -4,6 +4,7 @@ import { apiFetch } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import BentoCard from "./BentoCard";
+import PersonaAvatar from "@/components/ui/persona-avatar";
 import { cn } from "@/lib/utils";
 import {
   Tooltip,
@@ -216,9 +217,7 @@ export default function CalendarBentoCard({ className, delay, onSelectDate, sele
                       <div className="grid grid-cols-1 gap-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
                         {asistentes && asistentes.length > 0 ? asistentes.slice(0, MAX_TOOLTIP_PREVIEW).map((nombre, idx) => (
                           <div key={idx} className="flex items-center gap-2 group/item">
-                            <div className="h-5 w-5 rounded-lg bg-gray-100 flex items-center justify-center text-[8px] font-bold text-gray-500 group-hover/item:bg-primary/20 group-hover/item:text-primary transition-colors">
-                              {nombre.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                            </div>
+                            <PersonaAvatar seed={nombre} size={20} />
                             <span className="text-[11px] font-bold text-gray-700 group-hover/item:text-black transition-colors">{nombre}</span>
                           </div>
                         )) : (
@@ -276,9 +275,7 @@ export default function CalendarBentoCard({ className, delay, onSelectDate, sele
               asistenciasDia.map((a) => (
                 <div key={a.id} className="flex items-center justify-between py-3">
                   <div className="flex items-center gap-2.5">
-                    <div className="h-7 w-7 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-500">
-                      {a.clienteNombre.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
-                    </div>
+                    <PersonaAvatar seed={a.clienteNombre} size={28} />
                     <span className="text-sm font-medium text-black">{a.clienteNombre}</span>
                   </div>
                   <div className="flex items-center gap-1 text-gray-400">

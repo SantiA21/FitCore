@@ -18,6 +18,7 @@ import {
   Select, SelectContent, SelectItem,
   SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import PersonaAvatar from "@/components/ui/persona-avatar";
 import { apiFetch } from "@/lib/api";
 import { buildWhatsAppUrl } from "@/lib/utils";
 import { useGymSettings } from "@/context/GymSettingsContext";
@@ -73,24 +74,6 @@ function ClienteCardSkeleton() {
       </div>
     </div>
   );
-}
-
-const AVATAR_COLORS = [
-  "bg-indigo-50 text-indigo-600",
-  "bg-orange-50 text-orange-600",
-  "bg-emerald-50 text-emerald-600",
-  "bg-rose-50 text-rose-600",
-  "bg-blue-50 text-blue-600",
-  "bg-purple-50 text-purple-600",
-];
-
-function avatarColor(id: string) {
-  const sum = id.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-  return AVATAR_COLORS[sum % AVATAR_COLORS.length];
-}
-
-function iniciales(nombre: string, apellido: string) {
-  return `${nombre[0] ?? ""}${apellido[0] ?? ""}`.toUpperCase();
 }
 
 function diasRestantes(fechaVence: string | null): { texto: string; urgente: boolean } | null {
@@ -414,9 +397,7 @@ export default function Clientes() {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 font-bold text-sm ${avatarColor(c.id)}`}>
-                        {iniciales(c.nombre, c.apellido)}
-                      </div>
+                      <PersonaAvatar seed={c.id} size={44} />
                       <div className="min-w-0">
                         <h3 className="text-sm font-bold text-gray-900 truncate">{c.nombre} {c.apellido}</h3>
                         <p className="text-[11px] text-gray-400 mt-0.5">
