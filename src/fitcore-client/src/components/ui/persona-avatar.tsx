@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { getPersonaAvatarUri } from "@/lib/avatar";
+import { getPersonaAvatarUri, type AvatarStyleId } from "@/lib/avatar";
+import { useGymSettings } from "@/context/GymSettingsContext";
 import { cn } from "@/lib/utils";
 
 interface PersonaAvatarProps {
@@ -11,11 +12,18 @@ interface PersonaAvatarProps {
 }
 
 /**
- * Avatar ilustrado determinístico (DiceBear/Avataaars) que reemplaza a los
- * círculos de iniciales en toda la app. Mismo seed → mismo avatar siempre.
+ * Avatar ilustrado determinístico (DiceBear) que reemplaza a los círculos de
+ * iniciales en toda la app. Mismo seed → mismo avatar siempre. El estilo
+ * (Avataaars, Notionists, etc.) se toma de la configuración del gimnasio, así
+ * que cambiarlo en Configuración lo actualiza en todos lados sin tocar cada
+ * lugar que usa este componente.
  */
 export default function PersonaAvatar({ seed, size = 36, className }: PersonaAvatarProps) {
-  const uri = useMemo(() => getPersonaAvatarUri(seed), [seed]);
+  const { settings } = useGymSettings();
+  const uri = useMemo(
+    () => getPersonaAvatarUri(seed, settings.avatarStyle as AvatarStyleId),
+    [seed, settings.avatarStyle]
+  );
 
   return (
     <img

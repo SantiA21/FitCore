@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Palette, Image as ImageIcon, MessageCircle, Save } from "lucide-react";
+import { Palette, Image as ImageIcon, MessageCircle, Save, Users } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { fileToBase64 } from "@/lib/fileToBase64";
 import { useGymSettings } from "@/context/GymSettingsContext";
@@ -10,6 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
+import { AVATAR_STYLES, DEFAULT_AVATAR_STYLE, getPersonaAvatarUri, type AvatarStyleId } from "@/lib/avatar";
+
+const AVATAR_PREVIEW_SEEDS = ["Juan Perez", "Maria Gomez", "Ramiro Diaz"];
 
 const MAX_BRANDING_BYTES = 700 * 1024;
 
@@ -35,6 +38,7 @@ type FormState = {
   colorAcento: string;
   borderRadius: string;
   fontFamily: string;
+  avatarStyle: AvatarStyleId;
   mensajeBienvenida: string;
   telefono: string;
   whatsapp: string;
@@ -57,6 +61,7 @@ const emptyForm: FormState = {
   ...DEFAULT_COLORS,
   borderRadius: "lg",
   fontFamily: "inter",
+  avatarStyle: DEFAULT_AVATAR_STYLE,
   mensajeBienvenida: "",
   telefono: "",
   whatsapp: "",
@@ -66,11 +71,12 @@ const emptyForm: FormState = {
   tiktokUrl: "",
 };
 
-type Seccion = "marca" | "colores" | "comunicacion";
+type Seccion = "marca" | "colores" | "avatares" | "comunicacion";
 
 const SECCIONES: { id: Seccion; label: string; icon: typeof Palette }[] = [
   { id: "marca", label: "Identidad de marca", icon: ImageIcon },
   { id: "colores", label: "Colores y estética", icon: Palette },
+  { id: "avatares", label: "Avatares", icon: Users },
   { id: "comunicacion", label: "Comunicación al cliente", icon: MessageCircle },
 ];
 
@@ -96,6 +102,7 @@ export default function Configuracion() {
           colorAcento: data.colorAcento ?? DEFAULT_COLORS.colorAcento,
           borderRadius: data.borderRadius ?? "lg",
           fontFamily: data.fontFamily ?? "inter",
+          avatarStyle: (data.avatarStyle as AvatarStyleId) ?? DEFAULT_AVATAR_STYLE,
           mensajeBienvenida: data.mensajeBienvenida ?? "",
           telefono: data.telefono ?? "",
           whatsapp: data.whatsapp ?? "",
@@ -141,6 +148,7 @@ export default function Configuracion() {
           colorAcento: form.colorAcento,
           borderRadius: form.borderRadius,
           fontFamily: form.fontFamily,
+          avatarStyle: form.avatarStyle,
           mensajeBienvenida: form.mensajeBienvenida.trim() || null,
           telefono: form.telefono || null,
           whatsapp: form.whatsapp || null,
@@ -299,6 +307,56 @@ export default function Configuracion() {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+        </div>
+      )}
+
+      {seccion === "avatares" && (
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4">
+          <div>
+            <p className="text-sm font-semibold text-gray-900">Estilo de avatar</p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              Se usa para clientes y usuarios que no tienen una foto propia — se ve así en Clientes, Asistencias y el dashboard.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {AVATAR_STYLES.map((style) => {
+              const seleccionado = form.avatarStyle === style.id;
+              return (
+                <button
+                  key={style.id}
+                  type="button"
+                  disabled={saving}
+                  onClick={() => setForm((p) => ({ ...p, avatarStyle: style.id }))}
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl border p-3 text-left transition-colors",
+                    seleccionado
+                      ? "border-black bg-gray-50 ring-1 ring-black"
+                      : "border-gray-200 hover:border-gray-300 hover:bg-gray-50/60"
+                  )}
+                >
+                  <div className="flex -space-x-2 shrink-0">
+                    {AVATAR_PREVIEW_SEEDS.map((seed) => (
+                      <img
+                        key={seed}
+                        src={getPersonaAvatarUri(seed, style.id)}
+                        alt=""
+                        width={40}
+                        height={40}
+                        className="h-10 w-10 rounded-full ring-2 ring-white bg-gray-50"
+                      />
+                    ))}
+                  </div>
+                  <div className="min-w-0">
+                    <p className={cn("text-sm font-bold truncate", seleccionado ? "text-black" : "text-gray-800")}>
+                      {style.label}
+                    </p>
+                    <p className="text-xs text-gray-400 truncate">{style.description}</p>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

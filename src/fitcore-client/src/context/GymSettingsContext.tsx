@@ -10,6 +10,7 @@ interface GymSettings {
   colorAcento: string | null;
   borderRadius: string;
   fontFamily: string;
+  avatarStyle: string;
   mensajeBienvenida: string | null;
   telefono: string | null;
   whatsapp: string | null;
@@ -28,6 +29,7 @@ const DEFAULT_SETTINGS: GymSettings = {
   colorAcento: null,
   borderRadius: "lg",
   fontFamily: "inter",
+  avatarStyle: "avataaars",
   mensajeBienvenida: null,
   telefono: null,
   whatsapp: null,

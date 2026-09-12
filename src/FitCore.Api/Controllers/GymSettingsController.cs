@@ -17,6 +17,7 @@ public class GymSettingsController : ControllerBase
     private const int MaxImagenBase64Length = 950_000;
     private static readonly HashSet<string> FuentesValidas = new() { "inter", "geist", "system" };
     private static readonly HashSet<string> RadiosValidos = new() { "none", "sm", "md", "lg" };
+    private static readonly HashSet<string> AvatarStylesValidos = new() { "avataaars", "notionists", "personas", "open-peeps" };
 
     private readonly AppDbContext _context;
 
@@ -45,6 +46,9 @@ public class GymSettingsController : ControllerBase
         if (!RadiosValidos.Contains(dto.BorderRadius))
             return BadRequest(new { mensaje = "El radio de bordes seleccionado no es válido." });
 
+        if (!AvatarStylesValidos.Contains(dto.AvatarStyle))
+            return BadRequest(new { mensaje = "El estilo de avatar seleccionado no es válido." });
+
         if ((dto.LogoBase64?.Length ?? 0) > MaxImagenBase64Length ||
             (dto.FaviconBase64?.Length ?? 0) > MaxImagenBase64Length)
             return BadRequest(new { mensaje = "El logo o el favicon superan el tamaño máximo permitido (700KB)." });
@@ -64,6 +68,7 @@ public class GymSettingsController : ControllerBase
         settings.ColorAcento = dto.ColorAcento;
         settings.BorderRadius = dto.BorderRadius;
         settings.FontFamily = dto.FontFamily;
+        settings.AvatarStyle = dto.AvatarStyle;
         settings.MensajeBienvenida = string.IsNullOrWhiteSpace(dto.MensajeBienvenida) ? null : dto.MensajeBienvenida.Trim();
         settings.Telefono = dto.Telefono;
         settings.Whatsapp = dto.Whatsapp;
@@ -79,10 +84,10 @@ public class GymSettingsController : ControllerBase
     private static GymSettingsDto ToDto(GymSettings s) => new(
         s.NombreGimnasio, s.LogoBase64, s.FaviconBase64,
         s.ColorPrimario, s.ColorSecundario, s.ColorAcento,
-        s.BorderRadius, s.FontFamily, s.MensajeBienvenida,
+        s.BorderRadius, s.FontFamily, s.AvatarStyle, s.MensajeBienvenida,
         s.Telefono, s.Whatsapp, s.Email,
         s.InstagramUrl, s.FacebookUrl, s.TiktokUrl);
 
     private static GymSettingsDto DefaultDto() => new(
-        null, null, null, null, null, null, "lg", "inter", null, null, null, null, null, null, null);
+        null, null, null, null, null, null, "lg", "inter", "avataaars", null, null, null, null, null, null, null);
 }

@@ -16,6 +16,9 @@ public class GymSettings
     public string BorderRadius { get; set; } = "lg";
     public string FontFamily { get; set; } = "inter";
 
+    // Estilo de los avatares generados (DiceBear) para clientes y usuarios sin foto propia.
+    public string AvatarStyle { get; set; } = "avataaars";
+
     // Comunicación al cliente
     public string? MensajeBienvenida { get; set; }
     public string? Telefono { get; set; }
