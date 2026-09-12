@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { TrendingUp, TrendingDown, DollarSign, Maximize2 } from "lucide-react";
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import BentoCard from "./BentoCard";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import StatDetailDialog, { type DetailRow } from "./StatDetailDialog";
+import ChartTooltip from "./charts/ChartTooltip";
 
 type SerieItem = {
   dia: string;
@@ -60,14 +62,6 @@ export default function PaymentsGraphBentoCard({
     );
   }
 
-  const montos = serie.map((s) => s.monto);
-  const max = Math.max(...montos, 1);
-  const count = serie.length > 1 ? serie.length - 1 : 1;
-
-  const points = serie.length > 0
-    ? serie.map((d, i) => `${(i / count) * 100},${100 - (d.monto / max) * 75}`).join(" ")
-    : "0,100 100,100";
-
   const isPositive = porcentajeCrecimiento >= 0;
 
   const rows: DetailRow[] = [...serie].reverse().map((s, idx) => ({
@@ -112,42 +106,49 @@ export default function PaymentsGraphBentoCard({
           <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Total Semanal Cobrado</p>
         </div>
 
-        {/* Custom SVG Chart */}
-        <div className="flex-1 min-h-[56px] w-full relative group">
-          <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-full w-full overflow-visible">
-            <defs>
-              <linearGradient id="gradient-pay" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.2" />
-                <stop offset="100%" stopColor="var(--primary)" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            {/* Area */}
-            <polyline
-              points={`0,100 ${points} 100,100`}
-              fill="url(#gradient-pay)"
-              className="transition-all duration-1000 ease-in-out"
-            />
-            {/* Line */}
-            <polyline
-              points={points}
-              fill="none"
-              stroke="var(--primary)"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="transition-all duration-1000 ease-in-out"
-            />
-          </svg>
+        {/* Gráfico de área — recharts */}
+        <div className="flex-1 min-h-[100px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={serie} margin={{ top: 8, right: 2, left: 2, bottom: 0 }}>
+              <defs>
+                <linearGradient id="gradient-pay" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.22} />
+                  <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid vertical={false} stroke="#f1f1f2" />
+              <XAxis
+                dataKey="dia"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 9, fontWeight: 700, fill: "#9ca3af" }}
+                padding={{ left: 8, right: 8 }}
+              />
+              <YAxis hide domain={[0, (max: number) => max * 1.2]} />
+              <Tooltip
+                cursor={{ stroke: "#e5e7eb", strokeWidth: 1 }}
+                content={(props) => (
+                  <ChartTooltip
+                    {...(props as object)}
+                    variant="line"
+                    formatter={formatMonto}
+                  />
+                )}
+              />
+              <Area
+                type="monotone"
+                dataKey="monto"
+                name="Ingresos"
+                stroke="var(--primary)"
+                strokeWidth={2}
+                fill="url(#gradient-pay)"
+                dot={false}
+                activeDot={{ r: 5, stroke: "#fff", strokeWidth: 2 }}
+                isAnimationActive
+              />
+            </AreaChart>
+          </ResponsiveContainer>
         </div>
-
-        {/* Day labels */}
-        {serie.length > 0 && (
-          <div className="flex justify-between text-[9px] font-bold text-gray-400 uppercase tracking-wider pt-2 border-t border-gray-100/50">
-            {serie.map((s, idx) => (
-              <span key={idx} className="text-center">{s.dia}</span>
-            ))}
-          </div>
-        )}
       </div>
 
       <StatDetailDialog

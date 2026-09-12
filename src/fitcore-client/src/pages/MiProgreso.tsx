@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { TrendingUp, TrendingDown, Minus, Dumbbell, Camera, ImageOff, Scale } from "lucide-react";
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { apiFetch } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
+import ChartTooltip from "@/components/charts/ChartTooltip";
 
 interface Medicion {
   id: number;
@@ -58,15 +60,6 @@ export default function MiProgreso() {
   const primera = mediciones[0];
   const deltaTotal = ultima && primera ? ultima.pesoKg - primera.pesoKg : 0;
   const deltaUltima = ultima && anterior ? ultima.pesoKg - anterior.pesoKg : 0;
-
-  const pesos = mediciones.map((m) => m.pesoKg);
-  const max = Math.max(...pesos, 1);
-  const min = Math.min(...pesos, 0);
-  const rango = max - min || 1;
-  const count = mediciones.length > 1 ? mediciones.length - 1 : 1;
-  const points = mediciones.length > 0
-    ? mediciones.map((m, i) => `${(i / count) * 100},${100 - ((m.pesoKg - min) / rango) * 80 - 10}`).join(" ")
-    : "0,100 100,100";
 
   const fotosPrimera = primera && (primera.fotoFrenteBase64 || primera.fotoPerfilBase64);
   const fotosUltima = ultima && (ultima.fotoFrenteBase64 || ultima.fotoPerfilBase64) && ultima.id !== primera?.id;
@@ -197,22 +190,56 @@ export default function MiProgreso() {
               </div>
             </div>
 
-            <div className="h-32 w-full relative">
-              <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-full w-full overflow-visible">
-                <defs>
-                  <linearGradient id="gradient-peso" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#2563eb" stopOpacity="0.15" />
-                    <stop offset="100%" stopColor="#2563eb" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-                <polyline points={`0,100 ${points} 100,100`} fill="url(#gradient-peso)" />
-                <polyline points={points} fill="none" stroke="#2563eb" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-            <div className="flex justify-between text-[10px] font-bold text-gray-400 uppercase tracking-wider pt-2 mt-2 border-t border-gray-100">
-              {mediciones.map((m) => (
-                <span key={m.id}>{formatFecha(m.fecha)}</span>
-              ))}
+            <div className="h-48 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={mediciones} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="gradient-peso" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#2563eb" stopOpacity={0.18} />
+                      <stop offset="100%" stopColor="#2563eb" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid vertical={false} stroke="#f1f1f2" />
+                  <XAxis
+                    dataKey="fecha"
+                    tickFormatter={(v) => formatFecha(v)}
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 10, fontWeight: 700, fill: "#9ca3af" }}
+                    padding={{ left: 12, right: 12 }}
+                  />
+                  <YAxis
+                    domain={[(min: number) => Math.floor(min - 1), (max: number) => Math.ceil(max + 1)]}
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 10, fontWeight: 700, fill: "#9ca3af" }}
+                    width={32}
+                    tickCount={4}
+                  />
+                  <Tooltip
+                    cursor={{ stroke: "#e5e7eb", strokeWidth: 1 }}
+                    content={(props) => (
+                      <ChartTooltip
+                        {...(props as object)}
+                        variant="line"
+                        formatter={(v) => `${v} kg`}
+                        labelFormatter={(l) => formatFecha(String(l))}
+                      />
+                    )}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="pesoKg"
+                    name="Peso"
+                    stroke="#2563eb"
+                    strokeWidth={2}
+                    fill="url(#gradient-peso)"
+                    dot={{ r: 4, fill: "#2563eb", stroke: "#fff", strokeWidth: 2 }}
+                    activeDot={{ r: 5, stroke: "#fff", strokeWidth: 2 }}
+                    isAnimationActive
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
           </>
         )}

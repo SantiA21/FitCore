@@ -3,6 +3,8 @@ import {
   Wallet, TrendingUp, TrendingDown, PiggyBank, ShoppingCart, Plus, Trash2,
   ListChecks, CheckCircle2, XCircle, Clock,
 } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from "recharts";
+import ChartTooltip from "@/components/charts/ChartTooltip";
 import { apiFetch } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -236,7 +238,6 @@ export default function Contabilidad() {
     if (!res.ok) setComprasFuturas(prev);
   };
 
-  const maxSerie = Math.max(...(resumen?.serieMensual.flatMap((s) => [s.ingresos, s.egresos]) ?? [1]), 1);
   const comprasPendientes = comprasFuturas.filter((c) => c.estado === "Pendiente");
   const comprasResueltas = comprasFuturas.filter((c) => c.estado !== "Pendiente");
 
@@ -293,28 +294,32 @@ export default function Contabilidad() {
       ) : resumen && (
         <div className="bg-white border border-gray-200/80 rounded-2xl p-5 animate-fade-in-up">
           <h2 className="text-sm font-bold text-gray-900 mb-4">Ingresos vs. Egresos — últimos 6 meses</h2>
-          <div className="flex items-end justify-between gap-3 h-32">
-            {resumen.serieMensual.map((s, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                <div className="w-full flex items-end justify-center gap-1 h-24">
-                  <div
-                    className="w-2.5 bg-emerald-400 rounded-t-sm"
-                    style={{ height: `${Math.max((s.ingresos / maxSerie) * 100, 2)}%` }}
-                    title={`Ingresos: ${money(s.ingresos)}`}
-                  />
-                  <div
-                    className="w-2.5 bg-rose-400 rounded-t-sm"
-                    style={{ height: `${Math.max((s.egresos / maxSerie) * 100, 2)}%` }}
-                    title={`Egresos: ${money(s.egresos)}`}
-                  />
-                </div>
-                <span className="text-[10px] font-bold text-gray-400 uppercase">{s.mes}</span>
-              </div>
-            ))}
-          </div>
-          <div className="flex items-center gap-4 mt-3 pt-3 border-t border-gray-100 text-[11px] font-semibold text-gray-500">
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-400" /> Ingresos</span>
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-rose-400" /> Egresos</span>
+          <div className="h-52 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={resumen.serieMensual} margin={{ top: 8, right: 4, left: -16, bottom: 0 }} barGap={2}>
+                <CartesianGrid vertical={false} stroke="#f1f1f2" />
+                <XAxis
+                  dataKey="mes"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 10, fontWeight: 700, fill: "#9ca3af" }}
+                />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: "#9ca3af" }} width={32} />
+                <Tooltip
+                  cursor={{ fill: "#f9fafb" }}
+                  content={(props) => <ChartTooltip {...(props as object)} formatter={money} />}
+                />
+                <Legend
+                  verticalAlign="bottom"
+                  height={28}
+                  iconType="square"
+                  iconSize={9}
+                  formatter={(value) => <span className="text-[11px] font-semibold text-gray-500">{value}</span>}
+                />
+                <Bar dataKey="ingresos" name="Ingresos" fill="#34d399" radius={[4, 4, 0, 0]} maxBarSize={22} />
+                <Bar dataKey="egresos" name="Egresos" fill="#fb7185" radius={[4, 4, 0, 0]} maxBarSize={22} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
       )}

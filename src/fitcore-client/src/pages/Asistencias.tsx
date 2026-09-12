@@ -23,6 +23,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, Cell,
+} from "recharts";
+import ChartTooltip from "@/components/charts/ChartTooltip";
 import StatTile from "@/components/StatTile";
 import { apiFetch } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -311,7 +315,6 @@ export default function Asistencias() {
   }, [asistenciasDia, busqueda]);
 
   const maxTopAsistente = estadisticas?.topAsistentes[0]?.total ?? 0;
-  const maxPorDiaSemana = Math.max(1, ...(estadisticas?.porDiaSemana.map((d) => d.total) ?? [1]));
 
   const variacion = estadisticas?.variacionPorcentual ?? null;
   const variacionEsPositiva = (variacion ?? 0) >= 0;
@@ -660,22 +663,33 @@ export default function Asistencias() {
           <div className="border-t border-gray-100 pt-5">
             <h3 className="text-sm font-semibold text-black mb-3">Actividad por día de la semana</h3>
             {loadingEstadisticas ? (
-              <Skeleton className="h-24 w-full rounded" />
+              <Skeleton className="h-28 w-full rounded" />
             ) : (
-              <div className="flex items-end justify-between gap-1.5 h-24">
-                {(estadisticas?.porDiaSemana ?? []).map((d) => (
-                  <div key={d.diaSemana} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
-                    <div
-                      className={cn(
-                        "w-full rounded-md transition-all",
-                        d.total > 0 ? "bg-black" : "bg-gray-100"
-                      )}
-                      style={{ height: `${Math.max(4, (d.total / maxPorDiaSemana) * 100)}%` }}
-                      title={`${DIAS_SEMANA[d.diaSemana]}: ${d.total} asistencias`}
+              <div className="h-28 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={(estadisticas?.porDiaSemana ?? []).map((d) => ({ dia: DIAS_SEMANA[d.diaSemana], total: d.total }))}
+                    margin={{ top: 4, right: 0, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid vertical={false} stroke="#f1f1f2" />
+                    <XAxis
+                      dataKey="dia"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 10, fontWeight: 600, fill: "#9ca3af" }}
                     />
-                    <span className="text-[10px] font-medium text-gray-400">{DIAS_SEMANA[d.diaSemana]}</span>
-                  </div>
-                ))}
+                    <YAxis hide domain={[0, "dataMax"]} />
+                    <RechartsTooltip
+                      cursor={{ fill: "#f9fafb" }}
+                      content={(props) => <ChartTooltip {...(props as object)} formatter={(v) => `${v} asist.`} />}
+                    />
+                    <Bar dataKey="total" name="Asistencias" radius={[4, 4, 0, 0]} maxBarSize={28}>
+                      {(estadisticas?.porDiaSemana ?? []).map((d) => (
+                        <Cell key={d.diaSemana} fill={d.total > 0 ? "#111827" : "#f3f4f6"} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             )}
           </div>
