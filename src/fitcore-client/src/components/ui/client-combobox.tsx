@@ -35,12 +35,26 @@ export default function ClienteCombobox({
   id,
 }: ClienteComboboxProps) {
   const [open, setOpen] = useState(false);
+  // Se desmonta con retraso para que la transición de cierre (opacidad +
+  // traslado) llegue a reproducirse antes de sacar el nodo del DOM.
+  const [mounted, setMounted] = useState(false);
   const [query, setQuery] = useState("");
   const [highlight, setHighlight] = useState(0);
   const [dropUp, setDropUp] = useState(false);
   const [maxListHeight, setMaxListHeight] = useState(256);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (open) {
+      setMounted(true);
+      return;
+    }
+    if (!mounted) return;
+    const timeout = setTimeout(() => setMounted(false), 150);
+    return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   // Evita que el dropdown se abra fuera de la pantalla (y arrastre scroll a
   // toda la página): si no entra por debajo, se abre hacia arriba, y en
@@ -150,11 +164,15 @@ export default function ClienteCombobox({
         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
       </div>
 
-      {open && !disabled && (
+      {mounted && !disabled && (
         <div
           className={cn(
             "absolute z-50 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg py-1",
-            dropUp ? "bottom-full mb-1" : "top-full mt-1"
+            "transition-[opacity,transform] duration-150 ease-out",
+            dropUp ? "bottom-full mb-1" : "top-full mt-1",
+            open
+              ? "opacity-100 translate-y-0"
+              : cn("opacity-0 pointer-events-none", dropUp ? "translate-y-1" : "-translate-y-1")
           )}
           style={{ maxHeight: maxListHeight }}
         >

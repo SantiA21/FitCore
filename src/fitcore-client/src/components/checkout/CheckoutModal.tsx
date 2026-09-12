@@ -516,7 +516,7 @@ export default function CheckoutModal({
 
           {/* ────────────────── CONTENIDO: MERCADO PAGO ────────────────── */}
           {tab === "mercadopago" && (
-            <div className="space-y-4 pt-1 animate-in fade-in duration-200">
+            <div className="space-y-4 pt-1 animate-in fade-in-0 slide-in-from-bottom-1 duration-200">
               <div className="border border-[#009ee3]/20 bg-[#009ee3]/5 rounded-2xl p-5 space-y-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-[#009ee3] text-white flex items-center justify-center shrink-0 shadow-sm font-black text-sm">
@@ -559,7 +559,7 @@ export default function CheckoutModal({
 
           {/* ────────────────── CONTENIDO: TARJETA ────────────────── */}
           {tab === "tarjeta" && (
-            <form onSubmit={handlePagarTarjeta} className="space-y-4 pt-1 animate-in fade-in duration-200">
+            <form onSubmit={handlePagarTarjeta} className="space-y-4 pt-1 animate-in fade-in-0 slide-in-from-bottom-1 duration-200">
               {/* Presets de prueba */}
               <div className="bg-amber-500/10 border border-amber-500/25 rounded-2xl p-3 space-y-2">
                 <div className="flex items-center justify-between flex-wrap gap-x-2 gap-y-1">
@@ -745,7 +745,7 @@ export default function CheckoutModal({
 
           {/* ────────────────── CONTENIDO: TRANSFERENCIA ────────────────── */}
           {tab === "transferencia" && (
-            <form onSubmit={handleConfirmarTransferencia} className="space-y-4 pt-1 animate-in fade-in duration-200">
+            <form onSubmit={handleConfirmarTransferencia} className="space-y-4 pt-1 animate-in fade-in-0 slide-in-from-bottom-1 duration-200">
               {/* Tarjeta de Datos Bancarios */}
               <div className="border border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-2xl p-4 space-y-3">
                 <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-bold text-xs uppercase tracking-wider">

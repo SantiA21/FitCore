@@ -44,6 +44,33 @@ const clienteNavItems: NavItem[] = [
 
 const COLLAPSE_KEY = "fitcore_sidebar_collapsed";
 
+/**
+ * Envuelve texto que solo se muestra cuando el sidebar está expandido.
+ * En vez de montar/desmontar el nodo (lo que lo hace aparecer de golpe),
+ * anima su columna de grid entre 0fr y 1fr junto con la opacidad, para que
+ * el texto se desvanezca y "empuje" en sincro con el ancho del sidebar.
+ */
+function CollapsibleText({
+  collapsed,
+  className,
+  children,
+}: {
+  collapsed: boolean;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <span
+      className={cn(
+        "grid transition-[grid-template-columns,opacity] duration-200 ease-in-out",
+        collapsed ? "grid-cols-[0fr] opacity-0" : "grid-cols-[1fr] opacity-100"
+      )}
+    >
+      <span className={cn("overflow-hidden min-w-0", className)}>{children}</span>
+    </span>
+  );
+}
+
 function useReloj() {
   const [ahora, setAhora] = useState(new Date());
   useEffect(() => {
@@ -107,27 +134,32 @@ export default function Sidebar() {
         <Menu className="h-5 w-5 text-gray-700" />
       </button>
 
-      {/* Backdrop — solo mobile, cuando el drawer está abierto */}
-      {mobileOpen && (
-        <div
-          className="md:hidden fixed inset-0 bg-black/30 z-40"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
+      {/* Backdrop — solo mobile. Se mantiene montado y anima su opacidad
+          para que no aparezca/desaparezca de golpe junto al drawer. */}
+      <div
+        className={cn(
+          "md:hidden fixed inset-0 bg-black/30 z-40 transition-opacity duration-200",
+          mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        )}
+        onClick={() => setMobileOpen(false)}
+        aria-hidden={!mobileOpen}
+      />
 
       <aside
         className={cn(
-          "h-screen bg-white border-r border-[#f0f0f0] flex flex-col shrink-0 z-50 transition-[width,transform] duration-200",
+          "h-screen bg-white border-r border-[#f0f0f0] flex flex-col shrink-0 z-50 transition-[width,transform] duration-200 ease-in-out",
           "fixed top-0 left-0 md:relative md:translate-x-0",
           mobileOpen ? "translate-x-0" : "-translate-x-full",
           collapsed ? "w-[76px]" : "w-[220px]"
         )}
       >
         {/* Logo + cerrar (mobile) */}
-        <div className={cn("border-b border-[#f0f0f0] flex items-center", collapsed ? "justify-center p-4" : "justify-between p-5")}>
+        <div className={cn("border-b border-[#f0f0f0] flex items-center transition-[padding] duration-200", collapsed ? "justify-center p-4" : "justify-between p-5")}>
           <div className="flex items-center gap-2 min-w-0">
             <img src={settings.logoBase64 ?? logoIcon} alt={settings.nombreGimnasio ?? "FitCore"} className="h-8 w-8 object-contain shrink-0" />
-            {!collapsed && <h1 className="text-lg font-bold text-black truncate">{settings.nombreGimnasio ?? "FitCore"}</h1>}
+            <CollapsibleText collapsed={collapsed}>
+              <h1 className="text-lg font-bold text-black truncate whitespace-nowrap">{settings.nombreGimnasio ?? "FitCore"}</h1>
+            </CollapsibleText>
           </div>
           <button onClick={() => setMobileOpen(false)} className="md:hidden text-gray-400" aria-label="Cerrar menú">
             <X className="h-4 w-4" />
@@ -135,14 +167,14 @@ export default function Sidebar() {
         </div>
 
         {/* Reloj */}
-        <div className={cn("border-b border-[#f0f0f0] px-4 py-3", collapsed && "px-2 text-center")}>
+        <div className={cn("border-b border-[#f0f0f0] px-4 py-3 transition-[padding] duration-200", collapsed && "px-2 text-center")}>
           {collapsed ? (
-            <p className="text-xs font-bold text-gray-700">{hora}</p>
+            <p key="compacto" className="text-xs font-bold text-gray-700 animate-in fade-in-0 duration-200">{hora}</p>
           ) : (
-            <>
+            <div key="detallado" className="animate-in fade-in-0 duration-200">
               <p className="text-lg font-black text-gray-900 tabular-nums leading-none">{hora}</p>
               <p className="text-[10px] text-gray-400 font-semibold capitalize mt-1">{fecha}</p>
-            </>
+            </div>
           )}
         </div>
 
@@ -164,7 +196,9 @@ export default function Sidebar() {
                 )}
               >
                 <Icon className="h-4 w-4 shrink-0" />
-                {!collapsed && <span className="truncate">{item.label}</span>}
+                <CollapsibleText collapsed={collapsed}>
+                  <span className="truncate whitespace-nowrap block">{item.label}</span>
+                </CollapsibleText>
               </button>
             );
 
@@ -189,7 +223,9 @@ export default function Sidebar() {
           aria-label={collapsed ? "Expandir menú" : "Colapsar menú"}
         >
           {collapsed ? <PanelLeftOpen className="h-4 w-4 shrink-0" /> : <PanelLeftClose className="h-4 w-4 shrink-0" />}
-          {!collapsed && <span>Colapsar</span>}
+          <CollapsibleText collapsed={collapsed}>
+            <span className="whitespace-nowrap block">Colapsar</span>
+          </CollapsibleText>
         </button>
 
         {/* Profile + Logout */}
@@ -202,14 +238,14 @@ export default function Sidebar() {
                 <User className="h-4 w-4 text-gray-600" />
               </div>
             )}
-            {!collapsed && (
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-black truncate">
+            <CollapsibleText collapsed={collapsed} className="flex-1">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-black truncate whitespace-nowrap">
                   {user ? `${user.nombre} ${user.apellido}` : "Usuario"}
                 </p>
-                <p className="text-xs text-[#888] truncate">{user?.categoria ?? ""}</p>
+                <p className="text-xs text-[#888] truncate whitespace-nowrap">{user?.categoria ?? ""}</p>
               </div>
-            )}
+            </CollapsibleText>
           </div>
 
           {collapsed ? (
@@ -235,8 +271,10 @@ export default function Sidebar() {
             </button>
           )}
 
-          {settings.logoBase64 && !collapsed && (
-            <p className="text-[10px] text-gray-300 text-center pt-1">Powered by FitCore</p>
+          {settings.logoBase64 && (
+            <CollapsibleText collapsed={collapsed}>
+              <p className="text-[10px] text-gray-300 text-center pt-1 whitespace-nowrap">Powered by FitCore</p>
+            </CollapsibleText>
           )}
         </div>
       </aside>

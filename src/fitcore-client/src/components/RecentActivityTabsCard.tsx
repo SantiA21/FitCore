@@ -121,7 +121,10 @@ export default function RecentActivityTabsCard({
         )}
       </div>
 
-      <div className="space-y-1 lg:flex-1 overflow-y-auto min-h-[56px] pr-1">
+      <div
+        key={loading ? "loading" : tab}
+        className="space-y-1 lg:flex-1 overflow-y-auto min-h-[56px] pr-1 animate-in fade-in-0 duration-200"
+      >
         {loading ? (
           Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="flex items-center justify-between p-1.5">

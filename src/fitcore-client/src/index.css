@@ -105,71 +105,14 @@
 }
 
 @layer utilities {
-  @keyframes slide-in-from-top {
-    from {
-      transform: translateY(-100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
-
-  @keyframes slide-in-from-bottom {
-    from {
-      transform: translateY(100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
-
-  @keyframes slide-out-to-right {
-    from {
-      transform: translateX(0);
-      opacity: 1;
-    }
-    to {
-      transform: translateX(100%);
-      opacity: 0;
-    }
-  }
-
-  @keyframes fade-out {
-    from {
-      opacity: 1;
-    }
-    to {
-      opacity: 0;
-    }
-  }
-
-  .animate-in {
-    animation: slide-in-from-top 0.2s ease-out;
-  }
-
-  .animate-out {
-    animation: fade-out 0.15s ease-in forwards;
-  }
-
-  .slide-in-from-top-full {
-    animation: slide-in-from-top 0.2s ease-out;
-  }
-
-  .slide-in-from-bottom-full {
-    animation: slide-in-from-bottom 0.2s ease-out;
-  }
-
-  .slide-out-to-right-full {
-    animation: slide-out-to-right 0.15s ease-in forwards;
-  }
-
-  .fade-out-80 {
-    animation: fade-out 0.15s ease-in forwards;
-  }
+  /*
+   * .animate-in / .animate-out y los modificadores fade/zoom/slide-* los
+   * define el plugin "tailwindcss-animate" (compone las variables CSS de
+   * entrada y salida en una sola animación). No redefinir esos nombres acá:
+   * una clase plana definida después de @tailwind utilities gana la cascada
+   * y pisa la composición del plugin, dejando los data-[state] de Radix
+   * sin efecto.
+   */
 
   @keyframes shimmer {
     from {
